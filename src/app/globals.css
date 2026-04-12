@@ -1,26 +1,284 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: #f8f1df;
+  --surface-soft: #fff8eb;
+  --ink: #1d1c1a;
+  --ink-soft: #4f4b43;
+  --accent: #be2f29;
+  --accent-dark: #982822;
+  --secondary: #1f4a7c;
+  --line: #282621;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-bricolage);
+  --font-display: var(--font-dm-serif);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top right, #ecdcb8 0%, transparent 42%),
+    radial-gradient(circle at bottom left, #e8d3ad 0%, transparent 38%),
+    var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing-shell,
+.auth-shell,
+.franchise-shell,
+.dashboard-shell {
+  min-height: 100vh;
+  padding: clamp(1rem, 2vw, 2rem);
+}
+
+.landing-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.landing-nav,
+.auth-topbar {
+  border: 2px solid var(--line);
+  border-radius: 1.1rem;
+  background: var(--surface-soft);
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 3px 3px 0 #00000020;
+}
+
+.logo-text {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.2rem, 2vw, 1.9rem);
+}
+
+.rules-pill,
+.badge {
+  border: 2px solid var(--line);
+  border-radius: 0.8rem;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge.subtle {
+  background: #f3ecdc;
+}
+
+.hero-panel,
+.auth-panel,
+.franchise-grid-wrapper,
+.dashboard-card {
+  border: 2px solid var(--line);
+  border-radius: 1.5rem;
+  background: #fffef9;
+  box-shadow: 5px 5px 0 #00000022;
+}
+
+.hero-panel {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 1.2rem;
+  padding: clamp(2rem, 7vw, 4.5rem);
+}
+
+.hero-panel h1 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2rem, 6vw, 4.25rem);
+  line-height: 1.04;
+}
+
+.hero-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.hero-divider span {
+  width: min(16vw, 5.2rem);
+  height: 2px;
+  background: var(--line);
+}
+
+.hero-divider strong {
+  font-size: 1.5rem;
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.primary-button,
+.ghost-button {
+  border: 2px solid var(--line);
+  border-radius: 0.9rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 3px 3px 0 #00000022;
+}
+
+.primary-button:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+.primary-button.secondary {
+  background: var(--secondary);
+}
+
+.ghost-button {
+  background: #f2e7c7;
+}
+
+.landing-cta {
+  min-height: 3.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-shell,
+.dashboard-shell,
+.franchise-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.auth-panel,
+.dashboard-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.4rem;
+  text-align: center;
+}
+
+.auth-panel h1,
+.dashboard-card h1,
+.franchise-grid-wrapper h1,
+.franchise-login-panel h2 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+}
+
+.auth-panel p,
+.dashboard-card p {
+  color: var(--ink-soft);
+  margin-top: 0.5rem;
+}
+
+.auth-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.auth-form input {
+  border: 2px solid var(--line);
+  border-radius: 0.75rem;
+  min-height: 2.7rem;
+  padding: 0.4rem 0.75rem;
+  background: #fffcf4;
+}
+
+.error-text {
+  color: #8f1f1a;
+  font-size: 0.9rem;
+}
+
+.franchise-grid-wrapper {
+  padding: 1.1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.franchise-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.franchise-card {
+  border: 2px solid var(--line);
+  border-radius: 0.85rem;
+  background: #fff;
+  min-height: 6.5rem;
+  padding: 0.6rem;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+  gap: 0.5rem;
+}
+
+.franchise-card span {
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.franchise-card small {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.franchise-card.selected {
+  outline: 3px solid #204f83;
+}
+
+.franchise-login-panel {
+  border-top: 2px dashed #8b826f;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  max-width: 460px;
+}
+
+@media (max-width: 960px) {
+  .franchise-grid {
+    grid-template-columns: repeat(3, minmax(110px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .cta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .franchise-grid {
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }

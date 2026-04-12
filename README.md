@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IPL Auction Arena
 
-## Getting Started
+Next.js + Supabase starter for IPL auction operations with separate flows for:
 
-First, run the development server:
+- Auctioneer/Admin login via Supabase Auth
+- Franchise login via fixed credentials for all 10 IPL teams
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Included Screens
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Landing page with two login buttons
+- Admin login page
+- Franchise selector + franchise login page
+- Admin dashboard placeholder
+- Franchise dashboard placeholder
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Franchise Teams Included
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Chennai Super Kings (CSK)
+- Mumbai Indians (MI)
+- Royal Challengers Bengaluru (RCB)
+- Kolkata Knight Riders (KKR)
+- Sunrisers Hyderabad (SRH)
+- Rajasthan Royals (RR)
+- Punjab Kings (PBKS)
+- Delhi Capitals (DC)
+- Lucknow Super Giants (LSG)
+- Gujarat Titans (GT)
 
-## Learn More
+## Run Locally
 
-To learn more about Next.js, take a look at the following resources:
+1. Install dependencies:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+	npm install
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. Start dev server:
 
-## Deploy on Vercel
+	npm run dev
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Open:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+	http://localhost:3000
+
+## Supabase Setup
+
+The app uses these environment variables:
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+They are already added in .env.local for your provided project.
+
+For admin login, create at least one user in Supabase Auth (email + password) and use those credentials on the Admin Login page.
+
+## Notes
+
+- Franchise login is currently validated through a server route using fixed credentials in src/lib/franchises.ts.
+- Replace those credentials with your final team-specific usernames/passwords before production.
