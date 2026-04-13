@@ -67,9 +67,9 @@ export default function FranchiseLoginPage() {
       </div>
 
       <div className="franchise-grid-wrapper">
-        <h1>Select Franchise</h1>
+        <h1 className="franchise-title">Franchise Page</h1>
 
-        <section className="franchise-grid">
+        <section className="franchise-grid" aria-label="Franchise team buttons">
           {FRANCHISES.map((franchise) => (
             <button
               key={franchise.code}
@@ -82,36 +82,56 @@ export default function FranchiseLoginPage() {
                 setError("");
               }}
             >
-              <span>{franchise.name}</span>
+              <span>{franchise.code}</span>
+              <small>{franchise.name}</small>
               <small>Status: {franchise.status}</small>
             </button>
           ))}
         </section>
 
         <section className="franchise-login-panel">
-          <h2>{selectedFranchiseDetails?.name ?? "Franchise Login"}</h2>
-          <form className="auth-form" onSubmit={handleLogin}>
+          <h2>{selectedFranchiseDetails?.name ?? "Team Login Page"}</h2>
+          <form className="auth-form franchise-login-form" onSubmit={handleLogin}>
+            <label className="wire-label" htmlFor="franchise-username">
+              Team ID (Pre-Created)
+            </label>
             <input
+              id="franchise-username"
               type="text"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="Username"
+              placeholder="Enter Team Username"
               required
             />
+
+            <label className="wire-label" htmlFor="franchise-password">
+              Password
+            </label>
             <input
+              id="franchise-password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
+              placeholder="Enter Password"
               required
             />
 
             {error ? <p className="error-text">{error}</p> : null}
 
-            <button className="primary-button" type="submit" disabled={isLoading}>
+            <button className="primary-button wire-login-button" type="submit" disabled={isLoading}>
               {isLoading ? "Logging In..." : "Login"}
             </button>
           </form>
+        </section>
+
+        <section className="franchise-selection-strip" aria-label="Selected franchise">
+          {selectedFranchiseDetails ? (
+            <p>
+              Selected Team: <strong>{selectedFranchiseDetails.code}</strong> ({selectedFranchiseDetails.name})
+            </p>
+          ) : (
+            <p>Select any team button above to continue.</p>
+          )}
         </section>
       </div>
     </main>
