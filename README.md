@@ -47,7 +47,11 @@ The app uses these environment variables:
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
-They are already added in .env.local for your provided project.
+Create a local env file before running the app:
+
+1. Copy `.env.example` to `.env.local`
+2. Replace both placeholder values with your Supabase project values
+3. Restart the dev server after changing env variables
 
 For admin login, create at least one user in Supabase Auth (email + password) and use those credentials on the Admin Login page.
 
