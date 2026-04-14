@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
 
@@ -34,7 +34,7 @@ function nextIndex(currentIndex: number) {
   return (currentIndex + 1) % AUCTION_PLAYERS.length;
 }
 
-export default function FranchiseLiveAuctionPage() {
+function LiveAuctionContent() {
   const searchParams = useSearchParams();
   const teamCodeFromQuery = searchParams.get("team") as FranchiseCode | null;
   const franchise = teamCodeFromQuery ? FRANCHISE_BY_CODE[teamCodeFromQuery] : null;
@@ -260,5 +260,17 @@ export default function FranchiseLiveAuctionPage() {
         ))}
       </section>
     </main>
+  );
+}
+
+export default function FranchiseLiveAuctionPage() {
+  return (
+    <Suspense fallback={
+      <main className="dashboard-shell flex items-center justify-center">
+        <div className="text-xl font-bold animate-pulse">Loading Arena...</div>
+      </main>
+    }>
+      <LiveAuctionContent />
+    </Suspense>
   );
 }

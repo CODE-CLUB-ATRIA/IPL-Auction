@@ -4,8 +4,12 @@ export default function Home() {
   return (
     <main className="landing-shell">
       <nav className="landing-nav">
-        <span className="logo-text">IPL Auction Arena</span>
-        <span className="rules-pill">Rules</span>
+        <div className="logo-text">IPL Auction Arena</div>
+        <div className="topbar-right">
+          <button className="rules-pill" type="button">
+            Rules
+          </button>
+        </div>
       </nav>
 
       <section className="hero-panel">
@@ -16,16 +20,16 @@ export default function Home() {
         </h1>
 
         <div className="hero-divider">
-          <span />
+          <span aria-hidden />
           <strong>◆</strong>
-          <span />
+          <span aria-hidden />
         </div>
 
         <div className="cta-grid">
           <Link href="/admin/login" className="primary-button landing-cta">
             Auctioneer Login
           </Link>
-          <Link href="/franchise/login" className="primary-button landing-cta secondary">
+          <Link href="/franchise/login" className="primary-button landing-cta">
             Franchise Login
           </Link>
         </div>
