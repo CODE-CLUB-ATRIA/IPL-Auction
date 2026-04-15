@@ -1,0 +1,2330 @@
+@import "tailwindcss";
+
+:root {
+  --surface: #efefef;
+  --surface-soft: #f8f8f8;
+  --ink: #111111;
+  --ink-soft: #3e3e3e;
+  --accent: #191919;
+  --accent-dark: #000000;
+  --secondary: #303030;
+  --line: #111111;
+}
+
+/* @theme inline {
+  --font-sans: var(--font-bricolage);
+  --font-display: var(--font-dm-serif);
+} */
+
+body {
+  background:
+    linear-gradient(135deg, #ececec 0%, #f6f6f6 44%, #e5e5e5 100%),
+    var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing-shell,
+.auth-shell,
+.franchise-shell,
+.dashboard-shell {
+  min-height: 100vh;
+  padding: clamp(1rem, 2vw, 2rem);
+}
+
+.landing-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.landing-nav,
+.auth-topbar {
+  border: 3px solid var(--line);
+  border-radius: 1.1rem;
+  background: #fff;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 5px 5px 0 #0000002b;
+}
+
+.logo-text {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.2rem, 2vw, 1.9rem);
+}
+
+.rules-pill,
+.badge {
+  border: 3px solid var(--line);
+  border-radius: 0.8rem;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge.subtle {
+  background: #f3ecdc;
+}
+
+.hero-panel,
+.auth-panel,
+.franchise-grid-wrapper,
+.dashboard-card {
+  border: 3px solid var(--line);
+  border-radius: 1.5rem;
+  background: #fff;
+  box-shadow: 7px 7px 0 #00000024;
+}
+
+.hero-panel {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 1.2rem;
+  padding: clamp(2rem, 7vw, 4.5rem);
+}
+
+.hero-panel h1 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2rem, 6vw, 4.25rem);
+  line-height: 1.04;
+}
+
+.hero-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.hero-divider span {
+  width: min(16vw, 5.2rem);
+  height: 2px;
+  background: var(--line);
+}
+
+.hero-divider strong {
+  font-size: 1.5rem;
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.primary-button,
+.ghost-button {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 4px 4px 0 #00000038;
+}
+
+.primary-button:hover {
+  background: var(--accent-dark);
+  transform: translateY(-1px);
+}
+
+.primary-button.secondary {
+  background: var(--secondary);
+}
+
+.ghost-button {
+  background: #f3f3f3;
+}
+
+.landing-cta {
+  min-height: 3.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-shell,
+.dashboard-shell,
+.franchise-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.auth-panel,
+.dashboard-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.4rem;
+  text-align: center;
+}
+
+.admin-dashboard-shell {
+  max-width: 980px;
+}
+
+.admin-topbar {
+  border: 2px solid var(--line);
+  border-radius: 1rem;
+  background: #fffaec;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 3px 3px 0 #00000020;
+}
+
+.admin-branding {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+
+.brand-dots {
+  letter-spacing: -2px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.sketch-button,
+.sketch-tab,
+.role-banner {
+  border: 3px solid var(--line);
+  border-radius: 0.72rem;
+  background: #fff;
+  padding: 0.45rem 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.logout-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.admin-board {
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  background: #fffef9;
+  padding: 0.8rem;
+  box-shadow: 5px 5px 0 #00000022;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 0.7rem;
+}
+
+.admin-stat-card {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  min-height: 6rem;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.2rem;
+  padding: 0.5rem;
+}
+
+.admin-stat-card p {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.admin-stat-card h2 {
+  font-family: var(--font-display), serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.admin-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-bottom: 3px solid var(--line);
+  margin-top: 0.8rem;
+  padding: 0.35rem 0 0.3rem;
+}
+
+.sketch-tab {
+  padding: 0.2rem 0.8rem;
+  font-size: 0.85rem;
+  background: #fff8e4;
+}
+
+.sketch-tab.active {
+  background: #fff;
+}
+
+.random-player-block {
+  padding-top: 0.7rem;
+}
+
+.role-banner {
+  min-height: 3rem;
+  width: min(100%, 540px);
+  text-align: left;
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.player-stack {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  max-width: 360px;
+}
+
+.player-card {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.45rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.player-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.player-top-row h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.player-top-row small {
+  font-size: 0.73rem;
+  color: var(--ink-soft);
+}
+
+.radio-dot {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 3px solid var(--line);
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.player-meta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  gap: 0.35rem;
+}
+
+.player-meta-row span,
+.player-meta-row strong {
+  border: 3px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.68rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.player-meta-row strong {
+  font-weight: 700;
+}
+
+.auth-panel h1,
+.dashboard-card h1,
+.franchise-grid-wrapper h1,
+.franchise-login-panel h2 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+}
+
+.auth-panel p,
+.dashboard-card p {
+  color: var(--ink-soft);
+  margin-top: 0.5rem;
+}
+
+.admin-role-picker {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.admin-credentials-box {
+  margin-top: 0.9rem;
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.65rem;
+  text-align: left;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-credentials-box p {
+  font-size: 0.82rem;
+}
+
+.auth-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.auth-form input {
+  border: 3px solid var(--line);
+  border-radius: 0.75rem;
+  min-height: 2.7rem;
+  padding: 0.4rem 0.75rem;
+  background: #fffcf4;
+}
+
+.error-text {
+  color: #8f1f1a;
+  font-size: 0.9rem;
+}
+
+.franchise-grid-wrapper {
+  padding: 1.2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.franchise-title {
+  text-align: left;
+}
+
+.franchise-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.franchise-card {
+  border: 3px solid var(--line);
+  border-radius: 0.85rem;
+  background: #fff;
+  min-height: 6.5rem;
+  padding: 0.6rem;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+  gap: 0.5rem;
+}
+
+.franchise-card span {
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.franchise-card small {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.franchise-card.selected {
+  outline: 3px solid #000;
+  background: #f2f2f2;
+}
+
+.franchise-login-panel {
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  background: #fbfbfb;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  max-width: 640px;
+}
+
+.franchise-login-form {
+  max-width: 540px;
+}
+
+.wire-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.wire-login-button {
+  width: 9rem;
+}
+
+.franchise-selection-strip {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.65rem 0.8rem;
+}
+
+.franchise-dashboard-shell,
+.live-auction-shell {
+  max-width: 1220px;
+}
+
+.franchise-topbar-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.franchise-team-board,
+.live-auction-board {
+  border: 3px solid var(--line);
+  border-radius: 1.5rem;
+  background: #fff;
+  box-shadow: 7px 7px 0 #0000002a;
+  padding: 1rem;
+}
+
+.franchise-team-summary {
+  border: 3px solid var(--line);
+  border-radius: 1.2rem;
+  background: #fff;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.team-summary-main {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.team-summary-main h1 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1;
+}
+
+.team-summary-main p {
+  margin-top: 0.2rem;
+  color: var(--ink-soft);
+}
+
+.team-avatar,
+.player-avatar {
+  width: 4.6rem;
+  height: 4.6rem;
+  border: 3px solid var(--line);
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ece9e0, #dad5c7);
+}
+
+.team-purse-strip {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+}
+
+.team-purse-strip article,
+.purse-grid article,
+.price-cards article,
+.composition-grid article {
+  border: 3px solid var(--line);
+  border-radius: 0.85rem;
+  background: #fffdf7;
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.team-purse-strip span,
+.purse-grid span,
+.price-cards span,
+.composition-grid span {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.team-purse-strip strong,
+.purse-grid strong,
+.price-cards strong,
+.composition-grid strong {
+  font-size: 1rem;
+}
+
+.franchise-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  border-top: 3px solid var(--line);
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+}
+
+.live-auction-cta {
+  margin-left: auto;
+}
+
+.market-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 0.7rem;
+}
+
+.market-player-card,
+.market-pick {
+  border: 3px solid var(--line);
+  border-radius: 0.95rem;
+  background: #fff;
+  padding: 0.55rem;
+  text-align: left;
+}
+
+.market-player-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.market-player-top h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.market-player-top small {
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+}
+
+.market-player-meta {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, 1fr));
+  gap: 0.35rem;
+}
+
+.market-player-meta span {
+  border: 3px solid var(--line);
+  border-radius: 0.45rem;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0.16rem 0.22rem;
+}
+
+.live-auction-board {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 2fr 1fr;
+  grid-template-areas:
+    "player side"
+    "log composition";
+}
+
+.live-player-panel {
+  grid-area: player;
+  border: 3px solid var(--line);
+  border-radius: 1.2rem;
+  background: #fff;
+  padding: 0.9rem;
+  display: flex;
+  gap: 0.9rem;
+}
+
+.player-avatar {
+  width: 7rem;
+  height: 7rem;
+  flex-shrink: 0;
+}
+
+.player-info {
+  flex: 1;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.player-info h1 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+}
+
+.player-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.player-tags span {
+  border: 3px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.78rem;
+  background: #fff9ea;
+}
+
+.price-cards,
+.purse-grid,
+.composition-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.price-cards {
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+}
+
+.purse-grid,
+.composition-grid {
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+}
+
+.live-side-panel {
+  grid-area: side;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.purse-card,
+.bid-card,
+.bid-log-card,
+.composition-card {
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 0.7rem;
+}
+
+.purse-card h2,
+.bid-card h2,
+.bid-log-card h2,
+.composition-card h2 {
+  font-family: var(--font-display), serif;
+  font-size: 1.25rem;
+}
+
+.live-bid-number {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-top: 0.2rem;
+}
+
+.bid-step-row,
+.bid-actions-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.bid-actions-row .ghost-button,
+.bid-step-row .sketch-tab {
+  flex: 1;
+}
+
+.place-bid-button {
+  width: 100%;
+  margin-top: 0.55rem;
+}
+
+.bid-log-card {
+  grid-area: log;
+}
+
+.log-list {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.4rem;
+  max-height: 13.5rem;
+  overflow-y: auto;
+}
+
+.log-list p {
+  border: 3px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.79rem;
+  background: #fffdf8;
+}
+
+.composition-card {
+  grid-area: composition;
+}
+
+.market-picker-row {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
+}
+
+.market-pick {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.market-pick strong {
+  font-size: 0.86rem;
+}
+
+.market-pick span {
+  font-size: 0.73rem;
+  color: var(--ink-soft);
+}
+
+.market-pick.active {
+  background: #ececec;
+}
+
+.team-name-sub {
+  margin-top: 0.1rem;
+  font-weight: 700;
+}
+
+.auctioneer-shell,
+.admin-dashboard-shell {
+  max-width: 1300px;
+}
+
+.auctioneer-layout {
+  border: 3px solid var(--line);
+  border-radius: 1.6rem;
+  background: #fff;
+  box-shadow: 7px 7px 0 #0000002a;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 2.4fr 1fr;
+}
+
+.auctioneer-main-panel {
+  border: 3px solid var(--line);
+  border-radius: 1.2rem;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.auctioneer-hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 0.8rem;
+}
+
+.auctioneer-player-image,
+.auctioneer-stats-preview {
+  border: 3px solid var(--line);
+  border-radius: 1.3rem;
+  background: #f9f9f9;
+  min-height: 13rem;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 0.8rem;
+}
+
+.auctioneer-player-image span {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.6rem, 2.8vw, 2.5rem);
+}
+
+.auctioneer-stats-preview h2 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+}
+
+.auctioneer-highlight-row {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.auctioneer-highlight-row span {
+  font-size: 2.3rem;
+  font-weight: 800;
+}
+
+.auctioneer-highlight-row p {
+  color: var(--ink-soft);
+}
+
+.auctioneer-highlight-row strong {
+  font-size: 1.7rem;
+}
+
+.auctioneer-meta-row {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 1.5fr 1fr 1fr;
+}
+
+.auctioneer-meta-row article {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.5rem;
+  text-align: center;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.auctioneer-meta-row strong {
+  font-size: 1.2rem;
+}
+
+.auctioneer-meta-row small {
+  font-size: 0.78rem;
+}
+
+.auctioneer-side-panel {
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  padding: 0.7rem;
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+.auctioneer-side-panel h3 {
+  font-family: var(--font-display), serif;
+  font-size: 1.5rem;
+}
+
+.auctioneer-team-bids {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.auctioneer-team-bids div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.auctioneer-team-bids span {
+  border: 3px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.18rem 0.3rem;
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.auction-controls {
+  margin-top: 0.3rem;
+  border: 3px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.45rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.auction-controls h4 {
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.auction-controls .primary-button,
+.auction-controls .ghost-button {
+  min-height: 2.3rem;
+}
+
+.active-action {
+  outline: 3px solid #000;
+}
+
+.auctioneer-stats-card {
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 6px 6px 0 #0000001f;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.player-stat-banner {
+  border: 3px solid var(--line);
+  border-radius: 0.9rem;
+  background: #f8f8f8;
+  padding: 0.7rem;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.player-stat-banner span {
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 900;
+}
+
+.player-stat-banner p {
+  color: var(--ink-soft);
+}
+
+.player-stat-banner strong {
+  font-size: clamp(1.4rem, 2.5vw, 2.1rem);
+  justify-self: end;
+}
+
+.player-stat-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+}
+
+.player-stat-grid article {
+  border: 3px solid var(--line);
+  border-radius: 0.75rem;
+  text-align: center;
+  padding: 0.45rem;
+}
+
+.player-stat-grid strong {
+  font-size: 1.7rem;
+}
+
+.player-stat-grid span {
+  display: block;
+  color: var(--ink-soft);
+}
+
+.super-admin-section {
+  margin-top: 0.8rem;
+  border: 3px solid var(--line);
+  border-radius: 1rem;
+  padding: 0.8rem;
+  background: #fff;
+}
+
+.super-admin-section h2,
+.super-admin-section h3 {
+  font-family: var(--font-display), serif;
+  margin-bottom: 0.6rem;
+}
+
+.bid-log-table-wrap {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.bid-log-head,
+.bid-log-row {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 90px 1.6fr 1fr 1fr;
+  align-items: center;
+}
+
+.bid-log-head span,
+.bid-log-row span {
+  border: 3px solid var(--line);
+  border-radius: 0.55rem;
+  min-height: 2rem;
+  display: grid;
+  place-content: center;
+  background: #fff;
+}
+
+.bid-log-row {
+  margin-top: 0.4rem;
+}
+
+.live-control-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.live-control-card {
+  border: 3px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.teams-grid {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(5, minmax(70px, 1fr));
+}
+
+.super-admin-actions {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+}
+
+@media (max-width: 960px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .franchise-grid {
+    grid-template-columns: repeat(3, minmax(110px, 1fr));
+  }
+
+  .market-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .live-auction-board {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "player"
+      "side"
+      "log"
+      "composition";
+  }
+
+  .market-picker-row {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+
+  .auctioneer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auctioneer-hero-grid,
+  .auctioneer-meta-row,
+  .player-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-stat-banner {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .player-stat-banner strong {
+    justify-self: start;
+  }
+
+  .teams-grid {
+    grid-template-columns: repeat(3, minmax(70px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .admin-actions {
+    width: 100%;
+  }
+
+  .admin-actions .sketch-button,
+  .admin-actions .logout-link {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .admin-tab-row {
+    overflow-x: auto;
+  }
+
+  .cta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .franchise-grid {
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .franchise-topbar-center {
+    display: none;
+  }
+
+  .team-purse-strip,
+  .market-player-meta,
+  .purse-grid,
+  .composition-grid,
+  .price-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .live-player-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .market-grid,
+  .market-picker-row {
+    grid-template-columns: 1fr;
+  }
+
+  .live-auction-cta {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .admin-role-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .auctioneer-team-bids div,
+  .super-admin-actions,
+  .bid-log-head,
+  .bid-log-row {
+    grid-template-columns: 1fr;
+  }
+
+  .teams-grid {
+    grid-template-columns: repeat(2, minmax(70px, 1fr));
+  }
+}
+
+/* ======================================================
+   IPL LIVE AUCTION — BROADCAST-STYLE UI
+   ====================================================== */
+
+.ipl-auction-page {
+  --team-primary: #ffc107;
+  --team-secondary: #1a237e;
+  --team-glow: rgba(255, 193, 7, 0.4);
+  min-height: 100vh;
+  background: #060d12;
+  color: #e2e8f0;
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.ipl-auction-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- No team fallback ---- */
+.ipl-no-team {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+.ipl-no-team-card {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 420px;
+}
+
+.ipl-no-team-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.ipl-no-team-card h1 {
+  font-family: var(--font-display), serif;
+  font-size: 2rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.ipl-no-team-card p {
+  color: #94a3b8;
+  margin-bottom: 1.5rem;
+}
+
+/* ---- Buttons ---- */
+.ipl-btn {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.ipl-btn-primary {
+  background: linear-gradient(135deg, var(--team-primary), color-mix(in srgb, var(--team-primary) 80%, #000));
+  color: #000;
+  box-shadow: 0 4px 15px var(--team-glow);
+}
+
+.ipl-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px var(--team-glow);
+}
+
+.ipl-btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ipl-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.ipl-btn-raise {
+  flex: 1;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  font-size: 0.95rem;
+  padding: 0.7rem 1rem;
+}
+
+.ipl-btn-raise:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+
+.ipl-btn-reset {
+  flex: 0.6;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ipl-btn-reset:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ipl-btn-sold {
+  width: 100%;
+  background: linear-gradient(135deg, var(--team-primary), color-mix(in srgb, var(--team-primary) 70%, #fff));
+  color: #000;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 0.9rem 1rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 25px var(--team-glow);
+  margin-top: 0.6rem;
+}
+
+.ipl-btn-sold:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 35px var(--team-glow);
+}
+
+.ipl-btn-sold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ipl-btn-skip {
+  width: 100%;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 0.5rem;
+}
+
+.ipl-btn-skip:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* ---- SOLD Overlay ---- */
+.ipl-sold-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  animation: iplFadeIn 0.3s ease;
+}
+
+.ipl-sold-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  animation: iplSoldPop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ipl-sold-text {
+  font-family: var(--font-display), serif;
+  font-size: clamp(4rem, 10vw, 7rem);
+  font-weight: 900;
+  color: var(--team-primary);
+  text-shadow: 0 0 40px var(--team-glow), 0 0 80px var(--team-glow);
+  letter-spacing: 0.08em;
+}
+
+.ipl-sold-player {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ipl-sold-price {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--team-primary);
+}
+
+.ipl-sold-team {
+  font-size: 1.2rem;
+  color: #94a3b8;
+}
+
+@keyframes iplFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes iplSoldPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Header ---- */
+.ipl-auction-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.5rem;
+  background: rgba(15, 23, 42, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ipl-header-left,
+.ipl-header-center,
+.ipl-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.ipl-logo-block {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ipl-logo-icon {
+  font-size: 1.6rem;
+}
+
+.ipl-logo-title {
+  font-family: var(--font-display), serif;
+  font-size: 1.25rem;
+  color: #fff;
+  letter-spacing: 0.04em;
+  display: block;
+  line-height: 1.1;
+}
+
+.ipl-logo-sub {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #ef4444;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  display: block;
+}
+
+.ipl-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  padding: 0.3rem 0.9rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ipl-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: iplPulse 1.2s infinite;
+}
+
+@keyframes iplPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.ipl-team-badge {
+  font-weight: 900;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 0.5rem;
+  letter-spacing: 0.06em;
+}
+
+.ipl-team-name-header {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.ipl-header-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ---- Main Body ---- */
+.ipl-auction-body {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 1.2rem;
+  padding: 1.2rem 1.5rem;
+  align-items: stretch;
+}
+
+/* ---- Player Spotlight ---- */
+.ipl-player-spotlight {
+  display: flex;
+  height: 100%;
+}
+
+.ipl-player-card-main {
+  flex: 1;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  backdrop-filter: blur(16px);
+  display: grid;
+  gap: 1.4rem;
+  align-content: center;
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.ipl-player-card-main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--team-primary), var(--team-secondary), var(--team-primary));
+}
+
+.ipl-player-image-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.ipl-player-silhouette {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 4px solid var(--team-primary);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 40px var(--team-glow), inset 0 0 30px rgba(0,0,0,0.3);
+  animation: iplGlow 3s infinite alternate;
+}
+
+@keyframes iplGlow {
+  0% { box-shadow: 0 0 30px var(--team-glow), inset 0 0 30px rgba(0,0,0,0.3); }
+  100% { box-shadow: 0 0 60px var(--team-glow), 0 0 100px var(--team-glow), inset 0 0 30px rgba(0,0,0,0.3); }
+}
+
+.ipl-player-role-icon {
+  font-size: 7rem;
+}
+
+.ipl-player-country-flag {
+  position: absolute;
+  bottom: 0;
+  right: calc(50% - 160px);
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ipl-player-details {
+  text-align: center;
+}
+
+.ipl-player-id-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--team-primary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.08em;
+}
+
+.ipl-player-name {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.ipl-player-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--team-primary);
+}
+
+.ipl-player-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.ipl-player-stat {
+  text-align: center;
+}
+
+.ipl-stat-value {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ipl-stat-label {
+  display: block;
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.1rem;
+}
+
+/* Price Display */
+.ipl-price-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ipl-base-price,
+.ipl-current-bid {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.ipl-current-bid {
+  border-color: var(--team-primary);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 193, 7, 0.05));
+}
+
+.ipl-price-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.3rem;
+}
+
+.ipl-price-value {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.ipl-price-highlight {
+  color: var(--team-primary) !important;
+  font-size: 1.7rem;
+  text-shadow: 0 0 20px var(--team-glow);
+}
+
+/* Bid bounce animation */
+.ipl-bid-bounce {
+  animation: iplBidBounce 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes iplBidBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* Timer */
+.ipl-timer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ipl-timer-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.ipl-timer-ring svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.ipl-timer-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 5;
+}
+
+.ipl-timer-progress {
+  fill: none;
+  stroke: var(--team-primary);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.ipl-timer-urgent .ipl-timer-progress {
+  stroke: #ef4444;
+}
+
+.ipl-timer-urgent {
+  animation: iplTimerPop 1s ease-in-out infinite;
+}
+
+@keyframes iplTimerPop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+.ipl-timer-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ipl-timer-urgent .ipl-timer-text {
+  color: #ef4444;
+}
+
+.ipl-timer-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Right Side Controls ---- */
+.ipl-auction-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.ipl-bid-panel {
+  flex: 1;
+}
+
+.ipl-composition-panel {
+  flex: 1;
+}
+
+.ipl-purse-panel,
+.ipl-bid-panel,
+.ipl-composition-panel {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1.2rem;
+  padding: 1.1rem;
+  backdrop-filter: blur(12px);
+}
+
+.ipl-panel-title {
+  font-family: var(--font-display), serif;
+  font-size: 1.1rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.ipl-panel-icon {
+  font-size: 1.1rem;
+}
+
+/* Purse bar */
+.ipl-purse-bar-container {
+  margin-bottom: 0.8rem;
+}
+
+.ipl-purse-bar {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.ipl-purse-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--team-primary), color-mix(in srgb, var(--team-primary) 60%, #fff));
+  border-radius: 5px;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 10px var(--team-glow);
+}
+
+.ipl-purse-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+.ipl-purse-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.ipl-purse-stat {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.3rem;
+}
+
+.ipl-purse-number {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ipl-purse-label {
+  display: block;
+  font-size: 0.6rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.1rem;
+}
+
+/* Bid panel */
+.ipl-bid-amount {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--team-primary);
+  text-align: center;
+  margin-bottom: 0.8rem;
+  text-shadow: 0 0 25px var(--team-glow);
+}
+
+.ipl-bid-increments {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+
+.ipl-increment-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.ipl-increment-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.ipl-increment-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.ipl-increment-active {
+  background: var(--team-primary) !important;
+  color: #000 !important;
+  border-color: var(--team-primary) !important;
+  box-shadow: 0 0 12px var(--team-glow);
+}
+
+.ipl-bid-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Team Composition */
+.ipl-composition-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.ipl-comp-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.ipl-comp-icon {
+  font-size: 1.2rem;
+}
+
+.ipl-comp-count {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--team-primary);
+  min-width: 1.5rem;
+}
+
+.ipl-comp-role {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* ---- Bid Ticker ---- */
+.ipl-bid-ticker {
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 1.5rem 0.8rem;
+}
+
+.ipl-ticker-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ipl-ticker-icon {
+  font-size: 1rem;
+}
+
+.ipl-ticker-header h3 {
+  font-family: var(--font-display), serif;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.ipl-ticker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.ipl-ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  animation: iplSlideIn 0.3s ease;
+}
+
+@keyframes iplSlideIn {
+  from { transform: translateX(-12px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.ipl-ticker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ipl-ticker-info .ipl-ticker-dot { background: #64748b; }
+.ipl-ticker-bid .ipl-ticker-dot { background: #3b82f6; }
+.ipl-ticker-sold .ipl-ticker-dot { background: #22c55e; }
+.ipl-ticker-error .ipl-ticker-dot { background: #ef4444; }
+
+.ipl-ticker-info { color: #94a3b8; }
+.ipl-ticker-bid { color: #93c5fd; border-color: rgba(59, 130, 246, 0.15); }
+.ipl-ticker-sold {
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.06);
+  font-weight: 700;
+}
+.ipl-ticker-error {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+/* ---- Player Queue ---- */
+.ipl-player-queue {
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+.ipl-queue-title {
+  font-family: var(--font-display), serif;
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 0.6rem;
+}
+
+.ipl-queue-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+
+.ipl-queue-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.9rem;
+  padding: 0.7rem;
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: left;
+  color: #e2e8f0;
+}
+
+.ipl-queue-card:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.7);
+  transform: translateY(-2px);
+}
+
+.ipl-queue-active {
+  border-color: var(--team-primary) !important;
+  background: rgba(255, 193, 7, 0.06) !important;
+  box-shadow: 0 0 20px var(--team-glow);
+}
+
+.ipl-queue-sold {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  position: relative;
+}
+
+.ipl-queue-card-inner {
+  display: grid;
+  gap: 0.2rem;
+  position: relative;
+}
+
+.ipl-queue-role {
+  font-size: 1.2rem;
+}
+
+.ipl-queue-card-inner strong {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.ipl-queue-meta {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.ipl-queue-price {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--team-primary);
+}
+
+.ipl-queue-sold-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.55rem;
+  font-weight: 900;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  letter-spacing: 0.1em;
+}
+
+/* ---- BGMI-style Killfeed ---- */
+.ipl-killfeed {
+  position: fixed;
+  top: 8rem;
+  left: 1.2rem;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 440px;
+  pointer-events: none;
+}
+
+.ipl-killfeed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0 0.7rem 0.7rem 0;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid #64748b;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: iplKfEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: left center;
+}
+
+.ipl-kf-exit {
+  animation: iplKfExit 0.5s cubic-bezier(0.55, 0, 1, 0.45) forwards !important;
+}
+
+/* Type accents */
+.ipl-kf-bid {
+  border-left-color: #3b82f6;
+}
+
+.ipl-kf-sold {
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.ipl-kf-error {
+  border-left-color: #ef4444;
+}
+
+.ipl-kf-info {
+  border-left-color: #64748b;
+}
+
+.ipl-kf-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ipl-kf-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.3;
+}
+
+.ipl-kf-sold .ipl-kf-text {
+  color: #86efac;
+}
+
+.ipl-kf-error .ipl-kf-text {
+  color: #fca5a5;
+}
+
+.ipl-kf-bid .ipl-kf-text {
+  color: #93c5fd;
+}
+
+/* Enter: slide in from left */
+@keyframes iplKfEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) scale(0.9);
+  }
+  60% {
+    transform: translateX(6px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Exit: slide out to left + fade */
+@keyframes iplKfExit {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-80px) scale(0.9);
+  }
+}
+
+/* ---- Loading ---- */
+.ipl-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ipl-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--team-primary);
+  border-radius: 50%;
+  animation: iplSpin 0.8s linear infinite;
+}
+
+@keyframes iplSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 960px) {
+  .ipl-auction-body {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .ipl-auction-header {
+    padding: 0.6rem 1rem;
+  }
+
+  .ipl-header-center {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ipl-queue-strip {
+    grid-template-columns: repeat(3, minmax(130px, 1fr));
+  }
+
+  .ipl-price-display {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .ipl-auction-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .ipl-header-right {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .ipl-team-name-header {
+    display: none;
+  }
+
+  .ipl-queue-strip {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .ipl-player-silhouette {
+    width: 150px;
+    height: 150px;
+  }
+
+  .ipl-player-role-icon {
+    font-size: 2.5rem;
+  }
+
+  .ipl-composition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ipl-purse-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .ipl-bid-actions {
+    flex-direction: column;
+  }
+}
