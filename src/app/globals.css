@@ -2328,3 +2328,245 @@ a {
     flex-direction: column;
   }
 }
+
+/* ======================================================
+   CURTAIN REVEAL — THEATER-STYLE OPENING ANIMATION
+   ====================================================== */
+
+.curtain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  pointer-events: none;
+  background: #060d12;
+}
+
+/* ---- Curtain Panels ---- */
+.curtain-panel {
+  position: absolute;
+  top: 0;
+  width: 50.5%;
+  height: 100%;
+  z-index: 10;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 80px rgba(0, 0, 0, 0.4),
+    inset 0 0 200px rgba(0, 0, 0, 0.15);
+}
+
+.curtain-left {
+  left: 0;
+}
+
+.curtain-right {
+  right: 0;
+}
+
+/* Fabric shimmer overlay — diagonal traveling sheen */
+.curtain-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.08) 42%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 58%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 250% 100%;
+  animation: curtainShimmer 3s ease-in-out infinite;
+}
+
+@keyframes curtainShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Bottom drape curve — simulates the gathered fabric at lower edge */
+.curtain-drape-bottom {
+  position: absolute;
+  bottom: -30px;
+  left: -10%;
+  right: -10%;
+  height: 80px;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: blur(6px);
+}
+
+/* ---- Golden Center Seam ---- */
+.curtain-center-seam {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.curtain-seam-line {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    #b8860b 0%,
+    #ffd700 15%,
+    #daa520 30%,
+    #ffd700 50%,
+    #b8860b 70%,
+    #ffd700 85%,
+    #b8860b 100%
+  );
+  box-shadow:
+    0 0 12px rgba(255, 215, 0, 0.5),
+    0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+/* Decorative ornaments at top & bottom of seam */
+.curtain-seam-ornament {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd700, #b8860b);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+.curtain-seam-ornament.top {
+  top: 20%;
+}
+
+.curtain-seam-ornament.bottom {
+  bottom: 20%;
+}
+
+/* ---- Spotlight Flash ---- */
+.curtain-spotlight {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 215, 0, 0.3) 40%, transparent 70%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ---- Center Badge ---- */
+.curtain-center-wrapper {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 30;
+  pointer-events: none;
+  padding-bottom: 6%;
+}
+
+.curtain-center-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.curtain-badge-icon {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6));
+  animation: curtainBadgePulse 2s ease-in-out infinite;
+}
+
+@keyframes curtainBadgePulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.9)); }
+}
+
+.curtain-badge-team {
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 0 30px rgba(255, 255, 255, 0.4),
+    0 2px 10px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+}
+
+.curtain-badge-sub {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #ffd700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+/* ---- Title Text ---- */
+.curtain-title-wrapper {
+  position: absolute;
+  bottom: 22%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.curtain-title {
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- Sparkle Particles ---- */
+.curtain-sparkles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.curtain-sparkle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd700, #fff);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+}
+
+/* ---- Valance / Pelmet ---- */
+.curtain-valance {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 15;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+.curtain-valance-fringe {
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  border-bottom: 3px dashed;
+  opacity: 0.5;
+}

@@ -212,38 +212,178 @@ function CurtainReveal({
   teamCode: string;
   onComplete: () => void;
 }) {
+  const [phase, setPhase] = useState<"hold" | "opening" | "done">("hold");
+  const sparkleCount = 24;
+
+  useEffect(() => {
+    const holdTimer = setTimeout(() => setPhase("opening"), 1800);
+    return () => clearTimeout(holdTimer);
+  }, []);
+
+  // Darken / lighten helpers for fabric folds
+  const darken = (hex: string, amount: number) => {
+    const { r, g, b } = hexToRgb(hex);
+    const f = 1 - amount;
+    return `rgb(${Math.round(r * f)}, ${Math.round(g * f)}, ${Math.round(b * f)})`;
+  };
+  const lighten = (hex: string, amount: number) => {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgb(${Math.round(r + (255 - r) * amount)}, ${Math.round(g + (255 - g) * amount)}, ${Math.round(b + (255 - b) * amount)})`;
+  };
+
+  // Generate fabric fold gradient for realistic drape look
+  const fabricGradient = `
+    linear-gradient(90deg,
+      ${darken(primaryColor, 0.35)} 0%,
+      ${darken(primaryColor, 0.15)} 5%,
+      ${lighten(primaryColor, 0.1)} 12%,
+      ${darken(primaryColor, 0.2)} 20%,
+      ${lighten(primaryColor, 0.15)} 28%,
+      ${darken(primaryColor, 0.25)} 36%,
+      ${lighten(primaryColor, 0.12)} 44%,
+      ${darken(primaryColor, 0.18)} 52%,
+      ${lighten(primaryColor, 0.2)} 60%,
+      ${darken(primaryColor, 0.3)} 68%,
+      ${lighten(primaryColor, 0.1)} 76%,
+      ${darken(primaryColor, 0.22)} 84%,
+      ${lighten(primaryColor, 0.05)} 92%,
+      ${darken(primaryColor, 0.4)} 100%
+    )
+  `.trim();
+
   return (
-    <div className="fixed inset-0 z-[100] flex bg-transparent overflow-hidden pointer-events-none">
+    <div className="curtain-overlay">
+      {/* Spotlight flash behind curtains */}
+      <motion.div
+        className="curtain-spotlight"
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={phase === "opening" ? { opacity: [0, 1, 0.6, 0], scale: [0.5, 1.8, 2.5, 3] } : {}}
+        transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+      />
+
       {/* LEFT CURTAIN */}
       <motion.div
+        className="curtain-panel curtain-left"
+        style={{ background: fabricGradient }}
         initial={{ x: "0%" }}
-        animate={{ x: "-100%" }}
-        transition={{ duration: 1.2, ease: [0.65, 0, 0.35, 1], delay: 0.3 }}
-        className="absolute left-0 top-0 h-full w-1/2 flex items-center justify-end pr-2 border-r border-black/10"
-        style={{ backgroundColor: primaryColor }}
+        animate={phase === "opening" ? { x: "-105%" } : { x: "0%" }}
+        transition={
+          phase === "opening"
+            ? { duration: 1.6, ease: [0.76, 0, 0.24, 1], delay: 0.15 }
+            : {}
+        }
       >
-        <div className="relative w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center -mr-10 z-10">
-          <span className="font-display font-bold text-2xl text-black">{teamCode}</span>
-        </div>
+        {/* Fabric shimmer overlay */}
+        <div className="curtain-shimmer" />
+        {/* Bottom drape curve */}
+        <div className="curtain-drape-bottom" style={{ background: darken(primaryColor, 0.4) }} />
       </motion.div>
 
       {/* RIGHT CURTAIN */}
       <motion.div
+        className="curtain-panel curtain-right"
+        style={{ background: fabricGradient }}
         initial={{ x: "0%" }}
-        animate={{ x: "100%" }}
-        transition={{ duration: 1.2, ease: [0.65, 0, 0.35, 1], delay: 0.3 }}
-        className="absolute right-0 top-0 h-full w-1/2"
-        style={{ backgroundColor: primaryColor }}
-        onAnimationComplete={onComplete}
-      />
+        animate={phase === "opening" ? { x: "105%" } : { x: "0%" }}
+        transition={
+          phase === "opening"
+            ? { duration: 1.6, ease: [0.76, 0, 0.24, 1], delay: 0.15 }
+            : {}
+        }
+        onAnimationComplete={() => {
+          if (phase === "opening") {
+            setPhase("done");
+            onComplete();
+          }
+        }}
+      >
+        <div className="curtain-shimmer" />
+        <div className="curtain-drape-bottom" style={{ background: darken(primaryColor, 0.4) }} />
+      </motion.div>
 
-      {/* CENTER LINE */}
+      {/* Golden center seam */}
       <motion.div
+        className="curtain-center-seam"
         initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.1, delay: 0.3 }}
-        className="absolute top-0 left-1/2 w-[2px] h-full bg-white/20 -translate-x-1/2 z-0"
-      />
+        animate={phase === "opening" ? { opacity: 0, scaleX: 0 } : { opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <div className="curtain-seam-line" />
+        <div className="curtain-seam-ornament top" />
+        <div className="curtain-seam-ornament bottom" />
+      </motion.div>
+
+      {/* Center badge — visible during hold phase */}
+      <div className="curtain-center-wrapper">
+        <motion.div
+          className="curtain-center-badge"
+          initial={{ scale: 0, opacity: 0, rotate: -15 }}
+          animate={
+            phase === "hold"
+              ? { scale: 1, opacity: 1, rotate: 0 }
+              : { scale: 1.5, opacity: 0 }
+          }
+          transition={
+            phase === "hold"
+              ? { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }
+              : { duration: 0.5 }
+          }
+        >
+          <span className="curtain-badge-icon">🏏</span>
+          <span className="curtain-badge-team">{teamCode}</span>
+          <span className="curtain-badge-sub">AUCTION 2026</span>
+        </motion.div>
+      </div>
+
+      {/* Title text during hold */}
+      <div className="curtain-title-wrapper">
+        <motion.div
+          className="curtain-title"
+          initial={{ y: 40, opacity: 0 }}
+          animate={phase === "hold" ? { y: 0, opacity: 1 } : { y: -30, opacity: 0 }}
+          transition={phase === "hold" ? { duration: 0.6, delay: 0.8 } : { duration: 0.3 }}
+        >
+          ENTERING THE ARENA
+        </motion.div>
+      </div>
+
+      {/* Sparkle particles on open */}
+      {phase === "opening" && (
+        <div className="curtain-sparkles">
+          {Array.from({ length: sparkleCount }).map((_, i) => {
+            const angle = (Math.random() - 0.5) * 160;
+            const distance = 100 + Math.random() * 400;
+            const size = 3 + Math.random() * 6;
+            const delay = Math.random() * 0.6;
+            return (
+              <motion.div
+                key={i}
+                className="curtain-sparkle"
+                style={{ width: size, height: size }}
+                initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+                animate={{
+                  x: Math.cos((angle * Math.PI) / 180) * distance,
+                  y: Math.sin((angle * Math.PI) / 180) * distance - 100,
+                  opacity: [0, 1, 1, 0],
+                  scale: [0, 1.5, 1, 0],
+                }}
+                transition={{ duration: 1.2, delay: 0.3 + delay, ease: "easeOut" }}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Valance / pelmet across the top */}
+      <motion.div
+        className="curtain-valance"
+        style={{ background: darken(primaryColor, 0.2) }}
+        initial={{ y: 0 }}
+        animate={phase === "opening" ? { y: "-110%" } : {}}
+        transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1], delay: 0.6 }}
+      >
+        <div className="curtain-valance-fringe" style={{ borderColor: lighten(primaryColor, 0.3) }} />
+      </motion.div>
     </div>
   );
 }
