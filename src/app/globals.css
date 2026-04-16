@@ -18,6 +18,7 @@
 
 html,
 body {
+  margin: 0;
   color: var(--ink);
   font-family: var(--font-sans), sans-serif;
   scrollbar-width: none;
@@ -27,6 +28,30 @@ body {
   background:
     linear-gradient(135deg, #ececec 0%, #f6f6f6 44%, #e5e5e5 100%),
     var(--surface);
+}
+
+html.franchise-login-theme,
+body.franchise-login-theme {
+  height: 100%;
+  overflow: hidden;
+  background-color: #01070c;
+  background-image:
+    radial-gradient(circle at 18% 20%, rgba(34, 211, 238, 0.14), transparent 26%),
+    radial-gradient(circle at 82% 18%, rgba(6, 182, 212, 0.12), transparent 22%),
+    linear-gradient(145deg, #02080d 0%, #03111a 38%, #071d29 100%),
+    repeating-linear-gradient(
+      128deg,
+      rgba(34, 211, 238, 0.035) 0px,
+      rgba(34, 211, 238, 0.035) 20px,
+      transparent 20px,
+      transparent 148px
+    ),
+    linear-gradient(rgba(125, 211, 252, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.08) 42%, rgba(2, 6, 23, 0.82) 100%);
+  background-size: auto, auto, auto, auto, 4px 4px, 4px 4px, auto;
+  background-position: center;
+  overscroll-behavior-y: none;
 }
 
 html::-webkit-scrollbar,
