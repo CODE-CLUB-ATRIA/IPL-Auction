@@ -43,6 +43,72 @@ const sortPlayers = (players: Player[]): Player[] => {
   });
 };
 
+function FranchiseLiveAuctionLoading({
+  subtitle = "Connecting to live bidding feed.",
+}: {
+  subtitle?: string;
+}) {
+  return (
+    <main className="dashboard-shell franchise-dashboard-shell arena-dashboard-shell arena-loading-shell">
+      <header className="franchise-arena-header">
+        <div className="franchise-arena-topline">
+          <span className="arena-brand-pill">IPL Auction Arena</span>
+          <span className="arena-live-pill">Live Control</span>
+          <div className="arena-nav arena-loading-tabs" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+
+        <div className="franchise-arena-title-row">
+          <div className="franchise-title-block">
+            <p>Franchise Room</p>
+            <h1>Loading Live Auction</h1>
+          </div>
+          <div className="arena-team-actions arena-loading-actions" aria-hidden="true">
+            <span />
+            <span />
+          </div>
+        </div>
+      </header>
+
+      <section className="arena-loading-stage" aria-live="polite">
+        <div className="arena-loading-mark" aria-hidden="true">
+          <span />
+        </div>
+        <p>Live control</p>
+        <h2>Loading Live Auction</h2>
+        <span>{subtitle}</span>
+      </section>
+
+      <section className="arena-loading-grid" aria-hidden="true">
+        <div className="arena-panel arena-loading-card">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="arena-panel arena-loading-card is-center">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="arena-panel arena-loading-card">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function FranchiseLiveAuctionContent() {
   const searchParams = useSearchParams();
   const teamCodeFromQuery = searchParams.get("team") as FranchiseCode | null;
@@ -257,14 +323,7 @@ function FranchiseLiveAuctionContent() {
   }
 
   if (isLoading) {
-    return (
-      <main className="dashboard-shell h-screen overflow-hidden">
-        <section className="dashboard-card">
-          <h1>Loading Live Auction</h1>
-          <p>Fetching live player and auction state from Supabase.</p>
-        </section>
-      </main>
-    );
+    return <FranchiseLiveAuctionLoading subtitle="Fetching live player and auction state from Supabase." />;
   }
 
   return (
@@ -429,16 +488,7 @@ function FranchiseLiveAuctionContent() {
 
 export default function FranchiseLiveAuctionPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="dashboard-shell h-screen overflow-hidden">
-          <section className="dashboard-card">
-            <h1>Loading Live Auction</h1>
-            <p>Connecting to live bidding feed.</p>
-          </section>
-        </main>
-      }
-    >
+    <Suspense fallback={<FranchiseLiveAuctionLoading />}>
       <FranchiseLiveAuctionContent />
     </Suspense>
   );

@@ -1115,9 +1115,860 @@ a {
   grid-template-columns: repeat(2, minmax(140px, 1fr));
 }
 
+.arena-dashboard-shell {
+  --arena-bg: #02070c;
+  --arena-panel: rgba(3, 15, 23, 0.84);
+  --arena-panel-strong: rgba(6, 24, 34, 0.9);
+  --arena-line: rgba(128, 230, 247, 0.18);
+  --arena-line-strong: rgba(128, 230, 247, 0.42);
+  --arena-text: #eefcff;
+  --arena-muted: rgba(207, 239, 246, 0.62);
+  --arena-cyan: #83f0ff;
+  --arena-green: #8ee6bc;
+  --arena-gold: #e7c879;
+  max-width: 100%;
+  width: 100%;
+  min-height: 100vh;
+  padding: 1.3rem 1.7rem 1.5rem;
+  color: var(--arena-text);
+  background-color: var(--arena-bg);
+  background-image:
+    linear-gradient(
+      112deg,
+      transparent 0 14%,
+      rgba(93, 210, 231, 0.03) 14% 20%,
+      transparent 20% 44%,
+      rgba(93, 210, 231, 0.028) 44% 50%,
+      transparent 50% 100%
+    ),
+    linear-gradient(rgba(128, 230, 247, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 230, 247, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(4, 20, 31, 0.6), #02070c 70%);
+  background-size: auto, 5px 5px, 5px 5px, auto;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.franchise-arena-header {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.franchise-arena-topline {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.franchise-arena-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.arena-brand-pill,
+.arena-live-pill,
+.arena-team-actions span,
+.arena-team-actions a,
+.arena-nav {
+  border: 1px solid var(--arena-line);
+  border-radius: 8px;
+  background: rgba(5, 23, 34, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.arena-brand-pill,
+.arena-live-pill,
+.arena-team-actions span,
+.arena-team-actions a,
+.arena-nav button {
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  color: var(--arena-muted);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.arena-brand-pill {
+  min-width: 11rem;
+}
+
+.arena-live-pill {
+  border-color: rgba(131, 240, 255, 0.32);
+  color: var(--arena-cyan);
+}
+
+.arena-nav {
+  width: max-content;
+  display: flex;
+  gap: 0.25rem;
+  justify-self: end;
+  padding: 0.2rem;
+}
+
+.arena-nav button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.arena-nav button.active,
+.arena-nav button:hover {
+  background: var(--arena-cyan);
+  color: #031018;
+}
+
+.arena-team-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  justify-self: end;
+  max-width: 100%;
+}
+
+.arena-team-actions a {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.franchise-title-block {
+  min-width: 0;
+}
+
+.franchise-title-block p {
+  color: var(--arena-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+}
+
+.franchise-title-block h1 {
+  margin-top: 0.5rem;
+  color: #ffffff;
+  font-size: clamp(2rem, 4.3vw, 3.15rem);
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  line-height: 0.96;
+  text-transform: uppercase;
+  text-shadow: 0 0 28px rgba(131, 240, 255, 0.16);
+  overflow-wrap: anywhere;
+}
+
+.arena-alert {
+  border: 1px solid rgba(255, 121, 121, 0.35);
+  border-radius: 8px;
+  background: rgba(104, 20, 30, 0.28);
+  padding: 0.85rem 1rem;
+  color: #ffd6da;
+}
+
+.franchise-arena-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.05fr) minmax(360px, 0.9fr) minmax(300px, 0.82fr);
+  gap: 1.25rem;
+  min-height: calc(100vh - 10rem);
+}
+
+.arena-panel {
+  min-width: 0;
+  border: 1px solid var(--arena-line);
+  border-radius: 8px;
+  background: var(--arena-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(14px);
+}
+
+.franchise-roster-panel,
+.auction-intel-panel,
+.league-teams-panel {
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.franchise-command-block {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.franchise-crest {
+  width: 4.65rem;
+  height: 4.65rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(131, 240, 255, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(131, 240, 255, 0.18), rgba(12, 32, 45, 0.9)),
+    var(--arena-panel-strong);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+}
+
+.franchise-command-block p,
+.arena-section-heading p,
+.arena-title-rule p,
+.current-player-feature p,
+.franchise-player-lot {
+  color: var(--arena-muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.franchise-command-block h2 {
+  margin-top: 0.35rem;
+  color: #ffffff;
+  font-size: 1.65rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  line-height: 1.02;
+}
+
+.franchise-command-block span {
+  margin-top: 0.35rem;
+  display: block;
+  color: var(--arena-cyan);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.next-player-chip {
+  margin-left: auto;
+  min-width: 9.75rem;
+  border: 1px solid rgba(128, 230, 247, 0.16);
+  border-radius: 8px;
+  background: rgba(2, 12, 19, 0.58);
+  padding: 0.65rem;
+  text-align: right;
+}
+
+.next-player-chip span,
+.next-player-chip em {
+  display: block;
+  color: var(--arena-muted);
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.next-player-chip strong {
+  margin-top: 0.32rem;
+  display: block;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 1000;
+  line-height: 1.15;
+}
+
+.next-player-chip em {
+  margin-top: 0.32rem;
+  color: var(--arena-cyan);
+}
+
+.franchise-purse-strip,
+.auction-state-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.franchise-purse-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.franchise-purse-strip article,
+.auction-state-grid article {
+  border: 1px solid rgba(128, 230, 247, 0.14);
+  border-radius: 8px;
+  background: rgba(2, 12, 19, 0.5);
+  padding: 0.8rem;
+}
+
+.franchise-purse-strip span,
+.auction-state-grid span,
+.league-team-list span,
+.franchise-player-role,
+.strategy-card-note {
+  color: var(--arena-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.franchise-purse-strip strong,
+.auction-state-grid strong {
+  margin-top: 0.25rem;
+  display: block;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.arena-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.arena-section-heading h2 {
+  margin-top: 0.3rem;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.arena-section-heading > span {
+  border: 1px solid var(--arena-line);
+  border-radius: 8px;
+  padding: 0.32rem 0.65rem;
+  color: var(--arena-cyan);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.strategy-pick-strip {
+  min-height: 2.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.strategy-pick-strip span {
+  border: 1px solid rgba(128, 230, 247, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.45rem 0.65rem;
+  color: var(--arena-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.strategy-pick-strip .primary {
+  border-color: rgba(231, 200, 121, 0.42);
+  color: var(--arena-gold);
+}
+
+.strategy-pick-strip .secondary {
+  border-color: rgba(131, 240, 255, 0.4);
+  color: var(--arena-cyan);
+}
+
+.franchise-player-list,
+.league-team-list {
+  display: grid;
+  gap: 0.7rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(131, 240, 255, 0.45) transparent;
+}
+
+.franchise-player-list {
+  padding-right: 0.15rem;
+  max-height: calc(100vh - 24.5rem);
+}
+
+.league-team-list {
+  max-height: calc(100vh - 12rem);
+}
+
+.franchise-player-card {
+  width: 100%;
+  border: 1px solid rgba(128, 230, 247, 0.14);
+  border-radius: 8px;
+  background: rgba(5, 20, 30, 0.72);
+  padding: 0.9rem;
+  color: var(--arena-text);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+button.franchise-player-card {
+  cursor: pointer;
+}
+
+.franchise-player-card:hover,
+.franchise-player-card.is-live {
+  border-color: var(--arena-line-strong);
+  background: rgba(9, 35, 49, 0.86);
+}
+
+.franchise-player-card.is-selected-primary {
+  border-color: rgba(231, 200, 121, 0.6);
+  background: rgba(42, 35, 14, 0.68);
+}
+
+.franchise-player-card.is-selected-secondary {
+  border-color: rgba(131, 240, 255, 0.58);
+  background: rgba(6, 40, 50, 0.76);
+}
+
+.franchise-player-card.is-clickable:focus-visible,
+.arena-nav button:focus-visible,
+.arena-team-actions a:focus-visible,
+.arena-primary-link:focus-visible {
+  outline: 2px solid var(--arena-cyan);
+  outline-offset: 2px;
+}
+
+.franchise-player-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.franchise-player-top h3 {
+  margin-top: 0.35rem;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 1000;
+  line-height: 1.18;
+}
+
+.franchise-player-top > span {
+  border: 1px solid rgba(128, 230, 247, 0.14);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  color: var(--arena-cyan);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.franchise-player-role {
+  margin-top: 0.35rem;
+}
+
+.franchise-player-meta {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.franchise-player-meta span {
+  min-width: 0;
+  border-top: 1px solid rgba(128, 230, 247, 0.12);
+  padding-top: 0.45rem;
+  color: var(--arena-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.strategy-card-note {
+  margin-top: 0.75rem;
+  color: var(--arena-gold);
+}
+
+.arena-empty-state {
+  border: 1px dashed rgba(128, 230, 247, 0.28);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--arena-muted);
+}
+
+.arena-title-rule {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.arena-title-rule span {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(128, 230, 247, 0.26), transparent);
+}
+
+.arena-title-rule p {
+  color: var(--arena-cyan);
+}
+
+.arena-stat-stack {
+  display: grid;
+}
+
+.arena-stat-stack article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(128, 230, 247, 0.1);
+  padding: 1rem 0;
+}
+
+.arena-stat-stack span {
+  color: #ffffff;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.arena-stat-stack strong {
+  color: #d9faff;
+  font-size: 1.8rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.current-player-feature {
+  border: 1px solid var(--arena-line-strong);
+  border-radius: 8px;
+  background: rgba(4, 19, 29, 0.7);
+  padding: 1.45rem 1.1rem;
+  text-align: center;
+}
+
+.current-player-portrait {
+  width: 6.4rem;
+  height: 6.4rem;
+  margin: 0 auto 0.9rem;
+  border: 1px solid rgba(131, 240, 255, 0.26);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(131, 240, 255, 0.18), rgba(6, 24, 34, 0.92)),
+    rgba(2, 12, 19, 0.8);
+  background-position: center top;
+  background-size: cover;
+  display: grid;
+  place-items: center;
+}
+
+.current-player-portrait span {
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+}
+
+.current-player-feature strong {
+  margin-top: 1.05rem;
+  display: block;
+  color: #d9faff;
+  font-size: 2.55rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.current-player-feature > span {
+  margin-top: 0.8rem;
+  display: block;
+  color: var(--arena-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.auction-state-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auction-state-grid strong {
+  text-transform: uppercase;
+}
+
+.arena-primary-link {
+  min-height: 3rem;
+  border: 1px solid rgba(131, 240, 255, 0.52);
+  border-radius: 8px;
+  background: var(--arena-cyan);
+  color: #031018;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 1000;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.arena-primary-link:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.arena-primary-link.is-compact {
+  min-height: 2.25rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.22em;
+}
+
+.auction-intel-note {
+  border: 1px solid rgba(128, 230, 247, 0.14);
+  border-radius: 8px;
+  background: rgba(2, 12, 19, 0.42);
+  padding: 0.8rem;
+  color: var(--arena-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.arena-loading-shell {
+  min-height: 100vh;
+}
+
+.arena-loading-tabs,
+.arena-loading-actions {
+  pointer-events: none;
+}
+
+.arena-loading-tabs span,
+.arena-loading-actions span,
+.arena-loading-card span,
+.arena-loading-card strong,
+.arena-loading-card i {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(128, 230, 247, 0.08),
+    rgba(128, 230, 247, 0.22),
+    rgba(128, 230, 247, 0.08)
+  );
+  background-size: 220% 100%;
+  animation: arena-loading-sheen 1.35s ease-in-out infinite;
+}
+
+.arena-loading-tabs span {
+  width: 5.6rem;
+  height: 1.4rem;
+}
+
+.arena-loading-actions span {
+  width: 8.2rem;
+  height: 2.25rem;
+}
+
+.arena-loading-stage {
+  width: min(100%, 39rem);
+  margin: clamp(1rem, 5vh, 3rem) auto 0;
+  border: 1px solid var(--arena-line-strong);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(5, 23, 34, 0.92), rgba(2, 12, 19, 0.86)),
+    var(--arena-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 70px rgba(0, 0, 0, 0.36);
+  padding: 1.6rem;
+  text-align: center;
+}
+
+.arena-loading-mark {
+  width: 4.25rem;
+  height: 4.25rem;
+  margin: 0 auto 1rem;
+  border: 1px solid rgba(131, 240, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(2, 12, 19, 0.66);
+  display: grid;
+  place-items: center;
+}
+
+.arena-loading-mark span {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid rgba(131, 240, 255, 0.22);
+  border-top-color: var(--arena-cyan);
+  border-radius: 999px;
+  animation: arena-loading-spin 850ms linear infinite;
+}
+
+.arena-loading-stage p {
+  color: var(--arena-cyan);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.arena-loading-stage h2 {
+  margin-top: 0.65rem;
+  color: #ffffff;
+  font-size: 1.7rem;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.arena-loading-stage > span {
+  margin-top: 0.75rem;
+  display: block;
+  color: var(--arena-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.arena-loading-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.05fr) minmax(280px, 0.9fr) minmax(240px, 0.82fr);
+  gap: 1.25rem;
+  margin-top: auto;
+}
+
+.arena-loading-card {
+  min-height: 14rem;
+  padding: 1.2rem;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+.arena-loading-card span {
+  width: 8rem;
+  height: 0.75rem;
+}
+
+.arena-loading-card strong {
+  width: 70%;
+  height: 2.2rem;
+}
+
+.arena-loading-card i {
+  height: 2.85rem;
+}
+
+.arena-loading-card.is-center {
+  min-height: 18rem;
+}
+
+@keyframes arena-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes arena-loading-sheen {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+.league-team-list article {
+  border: 1px solid rgba(128, 230, 247, 0.13);
+  border-radius: 8px;
+  background: rgba(5, 20, 30, 0.72);
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.league-team-list article.active {
+  border-color: rgba(131, 240, 255, 0.48);
+  background: rgba(9, 37, 50, 0.92);
+}
+
+.league-team-list strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 1000;
+  letter-spacing: 0.28em;
+}
+
+.league-team-list span {
+  margin-top: 0.3rem;
+  display: block;
+}
+
+.league-team-list p {
+  color: var(--arena-cyan);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
 @media (max-width: 960px) {
   .admin-stats-grid {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .arena-dashboard-shell {
+    padding: 1rem;
+  }
+
+  .franchise-arena-topline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .franchise-arena-title-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .arena-nav,
+  .arena-team-actions {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .arena-nav {
+    grid-column: 1 / -1;
+    overflow-x: auto;
+  }
+
+  .arena-nav button {
+    flex: 1;
+  }
+
+  .arena-team-actions span,
+  .arena-team-actions a {
+    flex: 1;
+  }
+
+  .franchise-arena-grid {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .arena-loading-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .franchise-player-list,
+  .league-team-list {
+    max-height: none;
+    overflow: visible;
   }
 
   .franchise-grid {
@@ -1166,6 +2017,92 @@ a {
 }
 
 @media (max-width: 680px) {
+  .arena-dashboard-shell {
+    padding: 0.75rem;
+  }
+
+  .arena-brand-pill,
+  .arena-live-pill {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .franchise-arena-topline {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-team-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .franchise-roster-panel,
+  .auction-intel-panel,
+  .league-teams-panel {
+    padding: 1rem;
+  }
+
+  .franchise-command-block {
+    align-items: flex-start;
+  }
+
+  .franchise-crest {
+    width: 3.8rem;
+    height: 3.8rem;
+  }
+
+  .franchise-title-block h1 {
+    font-size: 1.55rem;
+  }
+
+  .franchise-command-block {
+    flex-wrap: wrap;
+  }
+
+  .franchise-command-block h2 {
+    font-size: 1.25rem;
+  }
+
+  .next-player-chip {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .franchise-purse-strip,
+  .franchise-player-meta,
+  .auction-state-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-stat-stack article {
+    padding: 0.8rem 0;
+  }
+
+  .arena-stat-stack span {
+    font-size: 0.96rem;
+  }
+
+  .arena-stat-stack strong {
+    font-size: 1.45rem;
+  }
+
+  .current-player-feature strong {
+    font-size: 2rem;
+  }
+
+  .arena-loading-stage {
+    padding: 1.2rem;
+  }
+
+  .arena-loading-stage h2 {
+    font-size: 1.35rem;
+  }
+
+  .arena-loading-grid {
+    display: none;
+  }
+
   .admin-topbar {
     flex-direction: column;
     align-items: flex-start;

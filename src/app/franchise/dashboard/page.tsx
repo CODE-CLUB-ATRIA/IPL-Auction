@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
+import { FRANCHISES, FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
 import { mapAuctionStateRow, mapPlayerRow } from "@/lib/auctionUtils";
 import { supabase } from "@/lib/supabase-client";
 import type { AuctionStateRow, Player, PlayerRow } from "@/types/player";
@@ -24,6 +24,24 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   squad: "Squad",
   market: "Market",
   strategy: "Strategy",
+};
+
+const VIEW_DETAILS: Record<ViewMode, { eyebrow: string; title: string; empty: string }> = {
+  squad: {
+    eyebrow: "Signed players",
+    title: "Team Roster",
+    empty: "No squad players yet.",
+  },
+  market: {
+    eyebrow: "Auction pool",
+    title: "Available Lots",
+    empty: "All players are currently assigned.",
+  },
+  strategy: {
+    eyebrow: "Shortlist",
+    title: "Strategy Picks",
+    empty: "No squad players yet.",
+  },
 };
 
 const getErrorMessage = (error: unknown): string => {
@@ -51,6 +69,74 @@ const sortPlayers = (players: Player[]): Player[] => {
 };
 
 const getStorageKey = (teamCode: FranchiseCode) => `franchise-strategy-${teamCode}`;
+
+function FranchiseDashboardLoading({
+  title = "Loading Franchise Dashboard",
+  subtitle = "Syncing live squad and market data.",
+}: {
+  title?: string;
+  subtitle?: string;
+}) {
+  return (
+    <main className="dashboard-shell franchise-dashboard-shell arena-dashboard-shell arena-loading-shell">
+      <header className="franchise-arena-header">
+        <div className="franchise-arena-topline">
+          <span className="arena-brand-pill">IPL Auction Arena</span>
+          <span className="arena-live-pill">Up For Auction</span>
+          <div className="arena-nav arena-loading-tabs" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+
+        <div className="franchise-arena-title-row">
+          <div className="franchise-title-block">
+            <p>Franchise Room</p>
+            <h1>{title}</h1>
+          </div>
+          <div className="arena-team-actions arena-loading-actions" aria-hidden="true">
+            <span />
+            <span />
+          </div>
+        </div>
+      </header>
+
+      <section className="arena-loading-stage" aria-live="polite">
+        <div className="arena-loading-mark" aria-hidden="true">
+          <span />
+        </div>
+        <p>Control room</p>
+        <h2>{title}</h2>
+        <span>{subtitle}</span>
+      </section>
+
+      <section className="arena-loading-grid" aria-hidden="true">
+        <div className="arena-panel arena-loading-card">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="arena-panel arena-loading-card is-center">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="arena-panel arena-loading-card">
+          <span />
+          <strong />
+          <i />
+          <i />
+          <i />
+        </div>
+      </section>
+    </main>
+  );
+}
 
 function FranchiseDashboardContent() {
   const searchParams = useSearchParams();
@@ -83,6 +169,35 @@ function FranchiseDashboardContent() {
   const strategyPlayers = useMemo(
     () => squadPlayers.filter((player) => selectedStrategyIds.includes(player.id)),
     [selectedStrategyIds, squadPlayers],
+  );
+
+  const currentPlayer = useMemo(
+    () => players.find((player) => player.id === auctionState?.current_player_id) ?? null,
+    [auctionState?.current_player_id, players],
+  );
+
+  const soldPlayersCount = useMemo(
+    () => players.filter((player) => player.assignedFranchiseCode).length,
+    [players],
+  );
+
+  const leagueTeams = useMemo(
+    () =>
+      FRANCHISES.map((franchiseInfo) => {
+        const row = teams.find((entry) => entry.franchise_code === franchiseInfo.code);
+        const rosterCount =
+          row?.roster_count ?? players.filter((player) => player.assignedFranchiseCode === franchiseInfo.code).length;
+
+        return {
+          code: franchiseInfo.code,
+          name: row?.name ?? franchiseInfo.name,
+          city: row?.city ?? franchiseInfo.city,
+          purseLakhs: row?.purse_lakhs ?? 1000,
+          spentLakhs: row?.spent_lakhs ?? 0,
+          rosterCount,
+        };
+      }),
+    [players, teams],
   );
 
   useEffect(() => {
@@ -181,6 +296,14 @@ function FranchiseDashboardContent() {
   const teamSpent = teamRow?.spent_lakhs ?? 0;
   const teamCount = teamRow?.roster_count ?? squadPlayers.length;
   const teamRemaining = Math.max(teamBudget - teamSpent, 0);
+  const currentBidLakhs = auctionState?.current_bid ?? currentPlayer?.currentBidLakhs ?? 0;
+  const currentPlayerPriceLakhs = currentBidLakhs || currentPlayer?.basePriceLakhs || 0;
+  const leadingFranchise = auctionState?.current_winning_franchise_code
+    ? FRANCHISE_BY_CODE[auctionState.current_winning_franchise_code as FranchiseCode] ?? null
+    : null;
+  const activeViewDetails = VIEW_DETAILS[viewMode];
+  const activeViewCount = viewMode === "market" ? marketPlayers.length : viewMode === "strategy" ? `${strategyPlayers.length}/2` : squadPlayers.length;
+  const currentLotLabel = currentPlayer?.slNo != null ? `Lot #${currentPlayer.slNo}` : "Live lot";
 
   const toggleStrategyPlayer = (playerId: string) => {
     setSelectedStrategyIds((currentIds) => {
@@ -199,43 +322,60 @@ function FranchiseDashboardContent() {
   const renderPlayerCard = (player: Player, options?: { isSelected?: boolean; isStrategy?: boolean; strategyIndex?: number }) => {
     const isSelected = options?.isSelected ?? false;
     const strategyIndex = options?.strategyIndex;
+    const isLivePlayer = player.id === currentPlayer?.id;
+    const cardClassName = [
+      "franchise-player-card",
+      isLivePlayer ? "is-live" : "",
+      isSelected ? (strategyIndex === 0 ? "is-selected-primary" : "is-selected-secondary") : "",
+      options?.isStrategy ? "is-clickable" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-    return (
-      <article
-        key={player.id}
-        className={`rounded-[1.6rem] border px-5 py-4 transition ${
-          isSelected
-            ? strategyIndex === 0
-              ? "border-[#d4b467] bg-[#090909] text-white"
-              : "border-[#4dd0e1] bg-[#050f15] text-white"
-            : "border-white/10 bg-white/[0.04] text-[#fdfbf7] hover:border-white/20 hover:bg-white/[0.07]"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-4">
+    const cardContent = (
+      <>
+        <div className="franchise-player-top">
           <div>
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-[#d4b467]">
-              {player.slNo !== null ? `Lot #${player.slNo}` : "Live Lot"}
+            <p className="franchise-player-lot">
+              {player.slNo !== null ? `Lot #${player.slNo}` : "Live lot"}
             </p>
-            <h3 className="mt-2 text-xl font-black">{player.name}</h3>
-            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#d4ddef]">{player.role}</p>
+            <h3>{player.name}</h3>
+            <p className="franchise-player-role">{player.role}</p>
           </div>
-          <span className="rounded-full border border-white/12 px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[#d4ddef]">
-            {player.assignedFranchiseCode ?? "MARKET"}
-          </span>
+          <span>{player.assignedFranchiseCode ?? "Pool"}</span>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[#d4ddef]">
+        <div className="franchise-player-meta">
           <span>{formatCr(player.basePriceLakhs)}</span>
-          <span>CP {player.creditPoints}</span>
+          <span>CP {player.creditPoints || "--"}</span>
           <span>{player.country}</span>
           <span>{player.status}</span>
         </div>
 
         {options?.isStrategy ? (
-          <p className="mt-4 text-sm uppercase tracking-[0.24em] text-[#d4b467]">
-            {strategyIndex === 0 ? "Primary strategy pick" : "Secondary strategy pick"}
+          <p className="strategy-card-note">
+            {isSelected ? (strategyIndex === 0 ? "Primary pick" : "Secondary pick") : "Tap to shortlist"}
           </p>
         ) : null}
+      </>
+    );
+
+    if (options?.isStrategy) {
+      return (
+        <button
+          key={player.id}
+          type="button"
+          onClick={() => toggleStrategyPlayer(player.id)}
+          className={cardClassName}
+        >
+          {cardContent}
+        </button>
+      );
+    }
+
+    return (
+      <article key={player.id} className={cardClassName}>
+        {cardContent}
       </article>
     );
   };
@@ -255,43 +395,70 @@ function FranchiseDashboardContent() {
   }
 
   if (isLoading) {
-    return (
-      <main className="dashboard-shell">
-        <section className="dashboard-card">
-          <h1>Loading {franchise.name}</h1>
-          <p>Fetching live squad and market data from Supabase.</p>
-        </section>
-      </main>
-    );
+    return <FranchiseDashboardLoading title={`Loading ${franchise.name}`} subtitle="Fetching live squad and market data from Supabase." />;
   }
 
   return (
-    <main className="dashboard-shell franchise-dashboard-shell">
-      <div className="auth-topbar">
-        <span className="badge">Logo / Title</span>
-        <div className="franchise-topbar-center badge">Up For Auction</div>
-        <div className="topbar-right">
-          <span className="badge subtle">{franchise.name}</span>
-          <Link href="/franchise/login" className="ghost-button">
-            Switch Team
-          </Link>
+    <main className="dashboard-shell franchise-dashboard-shell arena-dashboard-shell">
+      <header className="franchise-arena-header">
+        <div className="franchise-arena-topline">
+          <span className="arena-brand-pill">IPL Auction Arena</span>
+          <span className="arena-live-pill">Up For Auction</span>
+          <nav className="arena-nav" aria-label="Franchise dashboard views">
+            {(["squad", "market", "strategy"] as ViewMode[]).map((nextView) => (
+              <button
+                key={nextView}
+                type="button"
+                className={viewMode === nextView ? "active" : ""}
+                onClick={() => setViewMode(nextView)}
+              >
+                {VIEW_LABELS[nextView]}
+              </button>
+            ))}
+          </nav>
         </div>
-      </div>
 
-      {errorMessage ? <section className="dashboard-card">{errorMessage}</section> : null}
+        <div className="franchise-arena-title-row">
+          <div className="franchise-title-block">
+            <p>Franchise Room</p>
+            <h1>{franchise.name}</h1>
+          </div>
+          <div className="arena-team-actions">
+            <span>{franchise.code} War Room</span>
+            <Link href="/franchise/login">Switch Team</Link>
+            <Link
+              href={`/franchise/live-auction?team=${encodeURIComponent(franchise.code)}`}
+              className="arena-primary-link is-compact"
+            >
+              Enter Live Auction
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      <section className="franchise-team-board">
-        <section className="franchise-team-summary">
-          <div className="team-summary-main">
-            <div className="team-avatar" aria-hidden="true" />
-            <div>
-              <h1>Team Name</h1>
-              <p className="team-name-sub">{franchise.name}</p>
-              <p>{teamCount} / 25 Players Signed</p>
+      {errorMessage ? <section className="arena-alert">{errorMessage}</section> : null}
+
+      <section className="franchise-arena-grid">
+        <section className="arena-panel franchise-roster-panel" aria-label={`${franchise.name} dashboard`}>
+          <div className="franchise-command-block">
+            <div className="franchise-crest" aria-hidden="true">
+              {franchise.code}
             </div>
+            <div>
+              <p>{franchise.city}</p>
+              <h2>{franchise.code}</h2>
+              <span>
+                {teamCount} of 25 players signed
+              </span>
+            </div>
+            <aside className="next-player-chip">
+              <span>Next lot</span>
+              <strong>{currentPlayer?.name ?? "Waiting"}</strong>
+              <em>{currentPlayer ? currentLotLabel : "Auction idle"}</em>
+            </aside>
           </div>
 
-          <div className="team-purse-strip">
+          <div className="franchise-purse-strip">
             <article>
               <span>Total Budget</span>
               <strong>{formatCr(teamBudget)}</strong>
@@ -305,85 +472,130 @@ function FranchiseDashboardContent() {
               <strong>{formatCr(teamRemaining)}</strong>
             </article>
           </div>
+
+          <div className="arena-section-heading">
+            <div>
+              <p>{activeViewDetails.eyebrow}</p>
+              <h2>{activeViewDetails.title}</h2>
+            </div>
+            <span>{activeViewCount}</span>
+          </div>
+
+          {viewMode === "strategy" ? (
+            <div className="strategy-pick-strip">
+              {strategyPlayers.map((player, index) => (
+                <span key={player.id} className={index === 0 ? "primary" : "secondary"}>
+                  {player.name}
+                </span>
+              ))}
+              {!strategyPlayers.length ? <span>Select up to two players from your squad.</span> : null}
+            </div>
+          ) : null}
+
+          <section className="franchise-player-list" aria-label={activeViewDetails.title}>
+            {viewMode === "squad"
+              ? squadPlayers.length
+                ? squadPlayers.map((player) => renderPlayerCard(player))
+                : <article className="arena-empty-state">{activeViewDetails.empty}</article>
+              : null}
+
+            {viewMode === "market"
+              ? marketPlayers.length
+                ? marketPlayers.map((player) => renderPlayerCard(player))
+                : <article className="arena-empty-state">{activeViewDetails.empty}</article>
+              : null}
+
+            {viewMode === "strategy"
+              ? squadPlayers.length
+                ? squadPlayers.map((player) => {
+                    const strategyIndex = selectedStrategyIds.indexOf(player.id);
+                    return renderPlayerCard(player, {
+                      isSelected: strategyIndex !== -1,
+                      isStrategy: true,
+                      strategyIndex: strategyIndex === -1 ? undefined : strategyIndex,
+                    });
+                  })
+                : <article className="arena-empty-state">{activeViewDetails.empty}</article>
+              : null}
+          </section>
         </section>
 
-        <div className="franchise-action-row">
-          {(["squad", "market", "strategy"] as ViewMode[]).map((nextView) => (
-            <button
-              key={nextView}
-              type="button"
-              className={`sketch-tab ${viewMode === nextView ? "active" : ""}`}
-              onClick={() => setViewMode(nextView)}
-            >
-              {VIEW_LABELS[nextView]}
-            </button>
-          ))}
-          <Link
-            href={`/franchise/live-auction?team=${encodeURIComponent(franchise.code)}`}
-            className="primary-button live-auction-cta"
-          >
-            Enter Live Auction
-          </Link>
-        </div>
+        <section className="arena-panel auction-intel-panel" aria-label="Live auction stats">
+          <div className="arena-title-rule">
+            <span />
+            <p>Player Stats</p>
+            <span />
+          </div>
 
-        {viewMode === "squad" ? (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Team squad list">
-            {squadPlayers.length ? squadPlayers.map((player) => renderPlayerCard(player)) : <article className="dashboard-card">No squad players yet.</article>}
-          </section>
-        ) : null}
+          <div className="arena-stat-stack">
+            <article>
+              <span>Total Players</span>
+              <strong>{players.length}</strong>
+            </article>
+            <article>
+              <span>Sold</span>
+              <strong>{soldPlayersCount}</strong>
+            </article>
+            <article>
+              <span>Remaining</span>
+              <strong>{marketPlayers.length}</strong>
+            </article>
+            <article>
+              <span>Total Spent</span>
+              <strong>{formatCr(teamSpent)}</strong>
+            </article>
+            <article>
+              <span>Base Price</span>
+              <strong>{formatCr(currentPlayer?.basePriceLakhs ?? 0)}</strong>
+            </article>
+          </div>
 
-        {viewMode === "market" ? (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Auction market list">
-            {marketPlayers.length ? marketPlayers.map((player) => renderPlayerCard(player)) : <article className="dashboard-card">All players are currently assigned.</article>}
-          </section>
-        ) : null}
+          <article className="current-player-feature">
+            <p>Current Player</p>
+            <strong>{formatCr(currentPlayerPriceLakhs)}</strong>
+            <span>{currentPlayer?.name ?? "Waiting for auction"}</span>
+          </article>
 
-        {viewMode === "strategy" ? (
-          <section className="space-y-4">
-            <div className="dashboard-card">
-              <p className="text-sm uppercase tracking-[0.24em] text-[#d4b467]">Strategy picks</p>
-              <h2 className="mt-2 text-2xl font-black">Choose two players from your squad</h2>
-              <p className="mt-2 text-sm text-[#d4ddef]">Only two can be selected. They will be highlighted in black and teal for now.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {strategyPlayers.map((player, index) => (
-                  <span
-                    key={player.id}
-                    className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] ${index === 0 ? "bg-[#090909] text-white" : "bg-[#050f15] text-[#4dd0e1]"}`}
-                  >
-                    {player.name}
-                  </span>
-                ))}
-                {!strategyPlayers.length ? <span className="text-sm text-[#d4ddef]">Select two players from the squad below.</span> : null}
-              </div>
+          <div className="auction-state-grid">
+            <article>
+              <span>Status</span>
+              <strong>{auctionState?.status ?? "idle"}</strong>
+            </article>
+            <article>
+              <span>Leading</span>
+              <strong>{leadingFranchise?.code ?? auctionState?.current_winning_franchise_code ?? "None"}</strong>
+            </article>
+          </div>
+
+          <p className="auction-intel-note">
+            {currentPlayer ? `${currentLotLabel} / ${currentPlayer.role} / ${currentPlayer.country}` : "Live state will update when the auctioneer advances the lot."}
+          </p>
+        </section>
+
+        <aside className="arena-panel league-teams-panel" aria-label="All teams">
+          <div className="arena-section-heading">
+            <div>
+              <p>League ledger</p>
+              <h2>All Teams</h2>
             </div>
+            <span>Sold {soldPlayersCount}</span>
+          </div>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Strategy player selection">
-              {squadPlayers.length ? (
-                squadPlayers.map((player) => {
-                  const strategyIndex = selectedStrategyIds.indexOf(player.id);
-                  return (
-                    <button key={player.id} type="button" onClick={() => toggleStrategyPlayer(player.id)} className="text-left">
-                      {renderPlayerCard(player, {
-                        isSelected: strategyIndex !== -1,
-                        isStrategy: true,
-                        strategyIndex: strategyIndex === -1 ? undefined : strategyIndex,
-                      })}
-                    </button>
-                  );
-                })
-              ) : (
-                <article className="dashboard-card">No squad players yet.</article>
-              )}
-            </section>
-          </section>
-        ) : null}
-      </section>
-
-      <section className="dashboard-card">
-        <h2>Live Auction State</h2>
-        <p>Current Player: {auctionState?.current_player_id ?? "None"}</p>
-        <p>Current Bid: {formatCr(auctionState?.current_bid ?? 0)}</p>
-        <p>Status: {auctionState?.status ?? "idle"}</p>
+          <div className="league-team-list">
+            {leagueTeams.map((leagueTeam) => (
+              <article
+                key={leagueTeam.code}
+                className={leagueTeam.code === franchise.code ? "active" : ""}
+              >
+                <div>
+                  <strong>{leagueTeam.code}</strong>
+                  <span>{leagueTeam.rosterCount} players</span>
+                </div>
+                <p>{leagueTeam.spentLakhs ? formatCr(leagueTeam.spentLakhs) : "--"}</p>
+              </article>
+            ))}
+          </div>
+        </aside>
       </section>
     </main>
   );
@@ -392,14 +604,7 @@ function FranchiseDashboardContent() {
 export default function FranchiseDashboardPage() {
   return (
     <Suspense
-      fallback={
-        <main className="dashboard-shell">
-          <section className="dashboard-card">
-            <h1>Loading Franchise Dashboard</h1>
-            <p>Preparing live team data.</p>
-          </section>
-        </main>
-      }
+      fallback={<FranchiseDashboardLoading subtitle="Preparing live team data." />}
     >
       <FranchiseDashboardContent />
     </Suspense>
