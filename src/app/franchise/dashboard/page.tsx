@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import { FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
-import { teamGradients } from "@/constants/teamColors";
+import { teamGradients, teamGradientDirection } from "@/constants/teamColors";
 import { mapAuctionStateRow, mapPlayerRow } from "@/lib/auctionUtils";
 import { supabase } from "@/lib/supabase-client";
 import type { AuctionStateRow, Player, PlayerRow } from "@/types/player";
-import FranchisePlayerTile from "@/components/FranchisePlayerTile";
+import AnimatedTabs from "@/components/ui/animated-tabs";
+import Galaxy from "@/components/ui/galaxy";
+
 
 type TeamRow = {
   franchise_code: string;
@@ -53,6 +54,29 @@ const sortPlayers = (players: Player[]): Player[] => {
   });
 };
 
+const hexToHSL = (hex: string): string => {
+  let r = 0, g = 0, b = 0;
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 6) {
+    r = parseInt(hex.substring(0, 2), 16) / 255;
+    g = parseInt(hex.substring(2, 4), 16) / 255;
+    b = parseInt(hex.substring(4, 6), 16) / 255;
+  }
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)} ${Math.round(l * 100)}`;
+};
+
 const getStorageKey = (teamCode: FranchiseCode) => `franchise-strategy-${teamCode}`;
 
 const themeByFranchise: Record<FranchiseCode, { accent: string; accentSoft: string; surface: string; border: string; text: string; mutedText: string }> = {
@@ -69,6 +93,166 @@ const themeByFranchise: Record<FranchiseCode, { accent: string; accentSoft: stri
 };
 
 const getFranchiseTheme = (code: FranchiseCode) => themeByFranchise[code];
+
+/* ─── Team-specific silk textures ─── */
+const teamBackgrounds: Record<string, string> = {
+  RCB:  "/textures/rcb-bg.png",
+  MI:   "/textures/mi-bg.png",
+  CSK:  "/textures/csk-bg.png",
+  KKR:  "/textures/kkr-bg.png",
+  RR:   "/textures/rr-bg.png",
+  SRH:  "/textures/srh-bg.png",
+  DC:   "/textures/dc-bg.png",
+  GT:   "/textures/gt-bg.png",
+  LSG:  "/textures/lsg-bg.png",
+  PBKS: "/textures/pbks-bg.png",
+};
+
+/* ─── Player Card ─── */
+function PlayerCard({ player, bannerColor1, bannerColor2, franchiseCode, onClick }: {
+  player: Player;
+  bannerColor1: string;
+  bannerColor2: string;
+  franchiseCode?: string;
+  onClick?: () => void;
+}) {
+  const textureSrc = (franchiseCode && teamBackgrounds[franchiseCode])
+    ? teamBackgrounds[franchiseCode]
+    : "/textures/silk-bg.png";
+
+  return (
+    <div
+      onClick={onClick}
+      className="relative z-10 hover:z-20 transition-transform duration-200 ease-out hover:scale-105 active:scale-[0.98]"
+      style={{ cursor: onClick ? "pointer" : "default" }}
+    >
+      <article className="group relative overflow-hidden rounded-xl h-[145px] border border-white/80 hover:border-white transition-all duration-300 bg-black">
+
+        {/* Team-specific silk texture */}
+        <div
+          className="absolute inset-0 z-0 bg-cover bg-center bg-[length:120%_120%] transition-transform duration-700 group-hover:scale-110"
+          style={{ backgroundImage: `url('${textureSrc}')` }}
+        />
+
+        {/* Layer 1 — diagonal base color wash (lightened) */}
+        <div
+          className="absolute inset-0 z-[1] opacity-70"
+          style={{ background: `linear-gradient(135deg, ${bannerColor1}99, transparent 55%)` }}
+        />
+
+        {/* Layer 2 — temperature shift (softened, not going to solid black) */}
+        <div
+          className="absolute inset-0 z-[2] opacity-60"
+          style={{ background: `linear-gradient(to right, ${bannerColor1}44, transparent 65%)` }}
+        />
+
+        {/* Layer 3 — exposure veil (reduced to let texture breathe) */}
+        <div className="absolute inset-0 bg-black/25 z-[3]" />
+
+        {/* Layer 4 — radial color pop highlight */}
+        <div
+          className="absolute inset-0 z-[4] opacity-30"
+          style={{ background: `radial-gradient(circle at 20% 30%, ${bannerColor1}, transparent 55%)` }}
+        />
+
+        {/* Layer 5 — premium lighting sheen */}
+        <div className="absolute inset-0 z-[5] bg-gradient-to-br from-white/8 via-transparent to-black/20" />
+
+        {/* Content Container */}
+        <div className="relative z-10 w-full h-full" style={{
+          padding: "1rem 1.1rem",
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          gridTemplateRows: "auto 1fr",
+          gap: "0.4rem 1.1rem",
+          fontFamily: "'Patrick Hand', cursive"
+        }}>
+          {/* Player Avatar Circle — spans both rows */}
+          <div style={{
+            gridRow: "1 / 3",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            zIndex: 2
+          }}>
+            <div style={{
+              width: "5rem",
+              height: "5rem",
+              borderRadius: "50%",
+              border: "2.5px solid rgba(255,255,255,0.35)",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.45)",
+              flexShrink: 0,
+            }}>
+              {player.imageUrl ? (
+                <img
+                  src={player.imageUrl}
+                  alt={player.name ?? "Player"}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      const fallback = parent.querySelector("[data-fallback]") as HTMLElement | null;
+                      if (fallback) fallback.style.display = "flex";
+                    }
+                  }}
+                />
+              ) : null}
+              <span
+                data-fallback=""
+                style={{
+                  display: player.imageUrl ? "none" : "flex",
+                  fontSize: "1.5rem",
+                  fontWeight: "700",
+                  color: "#ffffff",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                  lineHeight: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                {player.name?.charAt(0)?.toUpperCase() ?? (player.slNo ?? "?")}
+              </span>
+            </div>
+          </div>
+
+          {/* Name & Subtitle — top right */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px", justifyContent: "flex-end", position: "relative", zIndex: 2 }}>
+            <h3 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#ffffff", textShadow: "0 2px 4px rgba(0,0,0,0.8)", lineHeight: 1.1, margin: 0 }}>
+              {player.name ?? "Player"}
+            </h3>
+            <small style={{ fontSize: "0.78rem", fontWeight: "400", color: "rgba(255,255,255,0.85)", textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}>
+              {player.role ?? "Role"} • {player.category ?? "Type"}
+            </small>
+          </div>
+
+          {/* Info Boxes — bottom right */}
+          <div className="flex gap-2 items-center mt-1 mr-1" style={{ position: "relative", zIndex: 2 }}>
+            <div className="flex flex-col items-center justify-center px-3 py-1.5 min-w-[80px] rounded-lg" style={{
+              background: "rgba(0,0,0,0.35)",
+            }}>
+              <p className="text-[10px] text-white/70 leading-tight">Base Price</p>
+              <p className="text-sm text-white font-semibold leading-snug">{formatCr(player.basePriceLakhs ?? 20)}</p>
+            </div>
+            <div className="flex flex-col items-center justify-center px-3 py-1.5 min-w-[70px] rounded-lg" style={{
+              background: "rgba(0,0,0,0.35)",
+            }}>
+              <p className="text-[10px] text-white/70 leading-tight">Credits</p>
+              <p className="text-sm text-white font-semibold leading-snug">{player.creditPoints ?? 50}</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+}
 
 function FranchiseDashboardContent() {
   const searchParams = useSearchParams();
@@ -102,6 +286,16 @@ function FranchiseDashboardContent() {
     () => squadPlayers.filter((player) => selectedStrategyIds.includes(player.id)),
     [selectedStrategyIds, squadPlayers],
   );
+
+  /* ─── Body background override for smoke page ─── */
+  useEffect(() => {
+    document.documentElement.classList.add("smoke-page");
+    document.body.classList.add("smoke-page");
+    return () => {
+      document.documentElement.classList.remove("smoke-page");
+      document.body.classList.remove("smoke-page");
+    };
+  }, []);
 
   useEffect(() => {
     if (!team) {
@@ -201,6 +395,13 @@ function FranchiseDashboardContent() {
   const teamRemaining = Math.max(teamBudget - teamSpent, 0);
   const theme = franchise ? getFranchiseTheme(franchise.code) : getFranchiseTheme("CSK");
   const gradients = franchise ? teamGradients[franchise.code] : teamGradients.CSK;
+  const isReverse = franchise
+    ? teamGradientDirection[franchise.code] === "reverse"
+    : false;
+  const bannerColor1 = isReverse ? gradients[1] : gradients[0];
+  const bannerColor2 = isReverse ? gradients[0] : gradients[1];
+
+
 
   const toggleStrategyPlayer = (playerId: string) => {
     setSelectedStrategyIds((currentIds) => {
@@ -241,152 +442,256 @@ function FranchiseDashboardContent() {
     );
   }
 
+  /* ─── Render: active player list for the current view ─── */
+  const activePlayerList = viewMode === "squad" ? squadPlayers : viewMode === "market" ? marketPlayers : squadPlayers;
+  const emptyMessage = viewMode === "squad" ? "No squad players yet." : "All players are currently assigned.";
+
   return (
-    <main
-      className="dashboard-shell franchise-dashboard-shell franchise-themed-shell"
-      style={{
-        ["--franchise-accent" as string]: theme.accent,
-        ["--franchise-accent-soft" as string]: theme.accentSoft,
-        ["--franchise-surface" as string]: theme.surface,
-        ["--franchise-border" as string]: theme.border,
-        ["--franchise-text" as string]: theme.text,
-        ["--franchise-muted" as string]: theme.mutedText,
-        ["--franchise-gradient-start" as string]: gradients[0],
-        ["--franchise-gradient-end" as string]: gradients[1],
-      } as CSSProperties}
-    >
-      <div className="auth-topbar">
-        <span className="badge franchise-brand-badge">Logo / Title</span>
-        <div className="franchise-topbar-center badge franchise-auction-pill">Up For Auction</div>
-        <div className="topbar-right">
-          <span className="badge subtle">{franchise.name}</span>
-          <Link href="/franchise/login" className="ghost-button">
-            Switch Team
-          </Link>
-        </div>
+    <div className="relative w-full min-h-screen overflow-hidden max-w-full">
+      {/* Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <Galaxy
+          density={0.9}
+          glowIntensity={0.35}
+          saturation={0.0}
+          hueShift={0}
+          speed={0.6}
+          mouseInteraction={false}
+          mouseRepulsion={false}
+          transparent={false}
+        />
       </div>
 
-      <div className="franchise-dashboard-scroll">
-        {errorMessage ? <section className="dashboard-card dashboard-card--wide">{errorMessage}</section> : null}
+      {/* Page Content */}
+      <div
+        className="relative z-10 w-full h-screen flex flex-col items-center overflow-y-auto overflow-x-hidden"
+      >
 
-        <section className="franchise-team-board">
-          <section className="franchise-team-summary">
-            <div className="team-summary-main">
-              <div className="team-avatar" aria-hidden="true" />
-              <div>
-                <h1>Team Name</h1>
-                <p className="team-name-sub">{franchise.name}</p>
-                <p>{teamCount} / 25 Players Signed</p>
-              </div>
+        {/* Top Bar Wrapper */}
+        <div className="w-[95%] max-w-[1600px] mt-3 flex-shrink-0">
+          <div className="auth-topbar glass-override" style={{
+            marginBottom: "0"
+          }}>
+            <div className="flex items-center gap-4">
+              <img
+                src="/images/cricket-banner.png"
+                className="w-[70px] h-[50px] object-cover rounded-md"
+                alt="Cricket Tycoon"
+              />
+              <span className="text-white/90 text-xl font-semibold tracking-wide drop-shadow-md">
+                Cricket Tycoon
+              </span>
             </div>
-
-            <div className="team-purse-strip">
-              <article>
-                <span>Total Budget</span>
-                <strong>{formatCr(teamBudget)}</strong>
-              </article>
-              <article>
-                <span>Spent</span>
-                <strong>{formatCr(teamSpent)}</strong>
-              </article>
-              <article>
-                <span>Remaining</span>
-                <strong>{formatCr(teamRemaining)}</strong>
-              </article>
+            <div className="topbar-right">
+              <Link href="/franchise/login" className="flex items-center justify-center bg-white/10 border border-white/20 rounded-xl px-6 py-2 shadow-md group cursor-pointer hover:bg-white/20 transition-all">
+                <div className="relative overflow-hidden w-[220px] h-6 flex items-center justify-center">
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-medium text-white transition-all duration-300 group-hover:-translate-y-6 group-hover:opacity-0">
+                    {franchise.name}
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-medium text-white translate-y-6 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    Switch Team
+                  </span>
+                </div>
+              </Link>
             </div>
-          </section>
-
-          <div className="franchise-action-row">
-            {(["squad", "market", "strategy"] as ViewMode[]).map((nextView) => (
-              <button
-                key={nextView}
-                type="button"
-                className={`sketch-tab ${viewMode === nextView ? "active" : ""}`}
-                onClick={() => setViewMode(nextView)}
-              >
-                {VIEW_LABELS[nextView]}
-              </button>
-            ))}
-            <Link
-              href={`/franchise/live-auction?team=${encodeURIComponent(franchise.code)}`}
-              className="primary-button live-auction-cta"
-            >
-              Enter Live Auction
-            </Link>
           </div>
+        </div>
 
-          {viewMode === "squad" ? (
-            <section className="franchise-player-grid" aria-label="Team squad list">
-              {squadPlayers.length ? (
-                squadPlayers.map((player) => <FranchisePlayerTile key={player.id} player={player} theme={theme} />)
-              ) : (
-                <article className="dashboard-card dashboard-card--wide">No squad players yet.</article>
-              )}
-            </section>
-          ) : null}
+        <main className="w-[95%] max-w-[1600px] mt-3 flex-grow flex flex-col gap-3 min-h-0 overflow-hidden mb-3">
+          {errorMessage ? <section className="dashboard-card dashboard-card--wide">{errorMessage}</section> : null}
 
-          {viewMode === "market" ? (
-            <section className="franchise-player-grid" aria-label="Auction market list">
-              {marketPlayers.length ? (
-                marketPlayers.map((player) => <FranchisePlayerTile key={player.id} player={player} theme={theme} />)
-              ) : (
-                <article className="dashboard-card dashboard-card--wide">All players are currently assigned.</article>
-              )}
-            </section>
-          ) : null}
+          <section className="franchise-team-board glass-override h-full flex flex-col min-h-0 overflow-hidden">
 
-          {viewMode === "strategy" ? (
-            <section className="space-y-4">
-              <div className="dashboard-card dashboard-card--wide">
-                <p className="text-sm uppercase tracking-[0.24em]" style={{ color: "var(--franchise-accent)" }}>Strategy picks</p>
-                <h2 className="mt-2 text-2xl font-black">Choose two players from your squad</h2>
-                <p className="mt-2 text-sm text-[#d4ddef]">Only two can be selected. Your team colors are used across the board.</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {strategyPlayers.map((player, index) => (
-                    <span
-                      key={player.id}
-                      className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] ${
-                        index === 0 ? "text-white" : "text-[#111111]"
-                      }`}
-                      style={{
-                        background: index === 0 ? "var(--franchise-accent)" : "var(--franchise-accent-soft)",
-                      }}
-                    >
-                      {player.name}
-                    </span>
-                  ))}
-                  {!strategyPlayers.length ? <span className="text-sm text-[#d4ddef]">Select two players from the squad below.</span> : null}
+            <div className="w-full rounded-2xl overflow-hidden mb-3 flex-shrink-0" style={{
+              background: `linear-gradient(to right, ${bannerColor1}, ${bannerColor2})`,
+              padding: "1rem 2rem",
+            }}>
+              <div className="grid grid-cols-2 gap-6 items-center w-full h-full">
+
+                {/* LEFT SIDE: Identity */}
+                <div className="flex items-center gap-5">
+                  <div>
+                    <img
+                      src={`/teams/${franchise.code}.png`}
+                      alt={`${franchise.name} Logo`}
+                      className="w-40 h-40 object-contain flex-shrink-0"
+                    />
+                  </div>
+                  <div className="text-white">
+                    <h1 className="text-4xl font-bold tracking-tight leading-tight">{franchise.name}</h1>
+                    <p className="text-base font-medium text-white/90 mt-1">{teamCount} / 25 Players Signed</p>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE: Budget & Actions */}
+                <div className="flex flex-col h-full justify-between items-start pl-8">
+                  {/* Budget Row */}
+                  <div className="grid grid-cols-3 gap-4 w-full">
+                    <article className="w-full bg-white/10 rounded-xl py-4 text-white text-center">
+                      <p className="text-sm font-medium uppercase tracking-wider text-white/70">Total Budget</p>
+                      <p className="text-lg font-bold mt-1">{formatCr(teamBudget)}</p>
+                    </article>
+
+                    <article className="w-full bg-white/10 rounded-xl py-4 text-white text-center">
+                      <p className="text-sm font-medium uppercase tracking-wider text-white/70">Spent</p>
+                      <p className="text-lg font-bold mt-1">{formatCr(teamSpent)}</p>
+                    </article>
+
+                    <article className="w-full bg-white/10 rounded-xl py-4 text-white text-center">
+                      <p className="text-sm font-medium uppercase tracking-wider text-white/70">Remaining</p>
+                      <p className="text-lg font-bold mt-1">{formatCr(teamRemaining)}</p>
+                    </article>
+                  </div>
+
+                  <Link
+                    href={`/franchise/live-auction?team=${encodeURIComponent(franchise.code)}`}
+                    className="
+                      w-full 
+                      bg-black 
+                      text-white 
+                      py-4 
+                      rounded-xl 
+                      font-bold 
+                      text-xl 
+                      tracking-wide
+                      flex items-center justify-center
+                      transition-all duration-200
+                      hover:scale-105 
+                      active:scale-95
+                    "
+                    style={{
+                      color: "#ffffff",
+                      opacity: 1,
+                      filter: "none",
+                      mixBlendMode: "normal"
+                    }}
+                  >
+                    Enter Live Auction
+                  </Link>
                 </div>
               </div>
+            </div>
 
-              <section className="franchise-player-grid" aria-label="Strategy player selection">
-                {squadPlayers.length ? (
-                  squadPlayers.map((player) => {
-                    return (
-                      <FranchisePlayerTile
+
+            {/* ── View-Mode Tabs ── */}
+            <div className="px-4 mb-4 flex-shrink-0">
+              <AnimatedTabs
+                tabs={[
+                  { label: "Squad", value: "squad" },
+                  { label: "Market", value: "market" },
+                  { label: "Strategy", value: "strategy" },
+                ]}
+                activeValue={viewMode}
+                onTabChange={(value) => setViewMode(value as ViewMode)}
+              />
+            </div>
+
+
+
+            {viewMode === "strategy" ? (
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-6 px-4 flex-1 min-h-0 overflow-visible items-stretch">
+
+                {/* LEFT: Strategy Picks (25%) */}
+                <div className="rounded-xl p-4 bg-white/10 border border-white/10 flex flex-col gap-4">
+                  {/* Title only */}
+                  <p
+                    className="text-xs font-bold uppercase tracking-widest"
+                    style={{ color: theme.accent }}
+                  >
+                    Strategy Picks ({strategyPlayers.length}/2)
+                  </p>
+
+                  {/* Slots */}
+                  <div className="flex flex-col gap-3">
+                    {strategyPlayers.map((p) => (
+                      <div key={p.id} className="relative">
+                        <PlayerCard
+                          player={p}
+                          bannerColor1={bannerColor1}
+                          bannerColor2={bannerColor2}
+                          franchiseCode={team ?? undefined}
+                          onClick={() => toggleStrategyPlayer(p.id)}
+                        />
+                        {/* Remove badge */}
+                        <div
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white/90 text-black text-[10px] font-bold flex items-center justify-center cursor-pointer z-30 shadow"
+                          onClick={() => toggleStrategyPlayer(p.id)}
+                        >
+                          ✕
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Empty slot placeholders */}
+                    {Array.from({ length: 2 - strategyPlayers.length }).map((_, i) => (
+                      <div
+                        key={`empty-${i}`}
+                        className="flex items-center justify-center border border-white/20 rounded-xl h-[145px] w-full text-white/30 text-sm font-medium tracking-wide"
+                      >
+                        Empty Slot
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CENTER: Squad Player Cards — excludes already-selected players (50%) */}
+                <div className="rounded-xl p-4 bg-white/10 border border-white/10 overflow-y-auto max-h-[calc(100vh-280px)] scrollbar-hide">
+                  <section className="grid grid-cols-2 gap-4 overflow-visible" aria-label="Strategy player selection">
+                    {activePlayerList
+                      .filter((p) => !selectedStrategyIds.includes(p.id))
+                      .map((player) => (
+                        <PlayerCard
+                          key={player.id}
+                          player={player}
+                          bannerColor1={bannerColor1}
+                          bannerColor2={bannerColor2}
+                          franchiseCode={team ?? undefined}
+                          onClick={() => toggleStrategyPlayer(player.id)}
+                        />
+                      ))}
+                    {activePlayerList.filter((p) => !selectedStrategyIds.includes(p.id)).length === 0 && (
+                      <p className="col-span-2 text-center text-white/40 text-sm py-6">All players selected.</p>
+                    )}
+                  </section>
+                </div>
+
+                {/* RIGHT: Live Auction State (25%) */}
+                <div className="rounded-xl p-4 bg-white/10 border border-white/10 flex flex-col gap-3">
+                  <h2 className="text-xl font-black">Live Auction State</h2>
+                  <p className="text-sm text-[#d4ddef]">Current Player: <span className="text-white font-semibold">{auctionState?.current_player_id ?? "None"}</span></p>
+                  <p className="text-sm text-[#d4ddef]">Current Bid: <span className="text-white font-semibold">{formatCr(auctionState?.current_bid ?? 0)}</span></p>
+                  <p className="text-sm text-[#d4ddef]">Status: <span className="text-white font-semibold capitalize">{auctionState?.status ?? "idle"}</span></p>
+                </div>
+
+              </div>
+            ) : null}
+
+            {/* ── Player Cards Grid (squad/market views) ── */}
+            {viewMode !== "strategy" ? (
+              <div className="px-4 pt-3 pb-6 h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden scrollbar-hide" style={{ borderRadius: "0.5rem" }}>
+                <section className="grid grid-cols-4 gap-6 overflow-visible" aria-label={
+                  viewMode === "squad" ? "Team squad list" : "Auction market list"
+                }>
+                  {activePlayerList.length ? (
+                    activePlayerList.map((player) => (
+                      <PlayerCard
                         key={player.id}
                         player={player}
-                        theme={theme}
-                        onClick={() => toggleStrategyPlayer(player.id)}
+                        bannerColor1={bannerColor1}
+                        bannerColor2={bannerColor2}
+                        franchiseCode={team ?? undefined}
                       />
-                    );
-                  })
-                ) : (
-                  <article className="dashboard-card dashboard-card--wide">No squad players yet.</article>
-                )}
-              </section>
-            </section>
-          ) : null}
-
-          <section className="dashboard-card dashboard-card--wide">
-            <h2>Live Auction State</h2>
-            <p>Current Player: {auctionState?.current_player_id ?? "None"}</p>
-            <p>Current Bid: {formatCr(auctionState?.current_bid ?? 0)}</p>
-            <p>Status: {auctionState?.status ?? "idle"}</p>
+                    ))
+                  ) : (
+                    <article className="dashboard-card dashboard-card--wide col-span-4">{emptyMessage}</article>
+                  )}
+                </section>
+              </div>
+            ) : null}
           </section>
-        </section>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
 
