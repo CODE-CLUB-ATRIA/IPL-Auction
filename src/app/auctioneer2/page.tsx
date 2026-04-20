@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AUCTIONEER_EMAILS } from "@/lib/admin-users";
-import { mapAuctionStateRow, mapPlayerRow } from "@/lib/auctionUtils";
+import { mapAuctionStateRow } from "@/lib/auctionUtils";
 import { supabase } from "@/lib/supabase-client";
 import { useAuthGuard } from "@/lib/useAuthGuard";
 import { Component as SilkBackgroundAnimation } from "@/app/admin/auctioneer/ui/silk-background-animation";
+import { mapPlayersForAuctionRound } from "@/services/supabase";
 import type { AuctionStateRow, Player, PlayerRow } from "@/types/player";
 
 type Tier = "common" | "epic" | "legendary";
@@ -59,18 +60,6 @@ const TIER_STYLES: Record<
     button: "bg-amber-300 text-slate-950 hover:bg-amber-200",
     buttonMuted: "bg-amber-900/60 text-amber-100 hover:bg-amber-800/75",
   },
-};
-
-const sortPlayers = (players: Player[]): Player[] => {
-  return [...players].sort((leftPlayer, rightPlayer) => {
-    if (leftPlayer.slNo !== null && rightPlayer.slNo !== null) {
-      return leftPlayer.slNo - rightPlayer.slNo;
-    }
-
-    if (leftPlayer.slNo !== null) return -1;
-    if (rightPlayer.slNo !== null) return 1;
-    return leftPlayer.name.localeCompare(rightPlayer.name);
-  });
 };
 
 const formatLakhs = (amount: number): string => {
@@ -162,7 +151,7 @@ export default function AuctioneerTwoPage() {
     setTopBids((data ?? []) as PlayerBidEvent[]);
   };
 
-  const refreshData = async () => {
+  const refreshData = async (): Promise<AuctionStateRow | null> => {
     const [{ data: playersData, error: playersError }, { data: stateData, error: stateError }] =
       await Promise.all([
         supabase
@@ -176,8 +165,12 @@ export default function AuctioneerTwoPage() {
     if (playersError) throw playersError;
     if (stateError) throw stateError;
 
-    const nextPlayers = sortPlayers(((playersData ?? []) as PlayerRow[]).map((row) => mapPlayerRow(row)));
     let nextState = stateData ? mapAuctionStateRow(stateData as Record<string, unknown>) : null;
+    const nextPlayers = mapPlayersForAuctionRound(
+      (playersData ?? []) as PlayerRow[],
+      nextState?.auction_round ?? 2,
+      { availableOnly: true },
+    );
 
     // Keep auction_state as the single source of truth for all connected screens.
     if (nextState?.id && !nextState.current_player_id && nextPlayers[0]?.id) {
@@ -209,6 +202,8 @@ export default function AuctioneerTwoPage() {
     setAuctionState(nextState);
     await loadTopBids(nextState?.current_player_id ?? null);
 
+    return nextState;
+
   };
 
   useEffect(() => {
@@ -216,10 +211,26 @@ export default function AuctioneerTwoPage() {
 
     const init = async () => {
       try {
-        await refreshData();
+        const latestState = await refreshData();
+
+        if (latestState?.id && latestState.current_player_id && latestState.status !== "bidding") {
+          const { error: startError } = await supabase
+            .from("auction_state")
+            .update({ status: "bidding", updated_at: new Date().toISOString() })
+            .eq("id", latestState.id);
+
+          if (startError) throw startError;
+          await refreshData();
+          if (isMounted) {
+            setNotice("Auction started. Franchises can now place bids.");
+          }
+        }
+
         if (isMounted) {
           setError("");
-          setNotice("");
+          if (!latestState || latestState.status === "bidding") {
+            setNotice("");
+          }
         }
       } catch (initError) {
         if (isMounted) {
@@ -250,7 +261,7 @@ export default function AuctioneerTwoPage() {
     // Fallback for cases where realtime events lag or drop.
     const interval = window.setInterval(() => {
       void refreshData();
-    }, 2000);
+    }, 1000);
 
     return () => {
       isMounted = false;
@@ -272,6 +283,40 @@ export default function AuctioneerTwoPage() {
       window.clearTimeout(timer);
     };
   }, [soldAnnouncement]);
+
+  // Auto-start bidding when current player changes (next player clicked)
+  useEffect(() => {
+    let isMounted = true;
+
+    const autoStartBidding = async () => {
+      if (!auctionState?.id || !auctionState.current_player_id) return;
+      if (auctionState.status === "bidding") return; // Already bidding
+
+      try {
+        const { error } = await supabase
+          .from("auction_state")
+          .update({ status: "bidding", updated_at: new Date().toISOString() })
+          .eq("id", auctionState.id);
+
+        if (error) throw error;
+
+        if (isMounted) {
+          await refreshData();
+          setNotice("Bidding started. Franchises can now place bids.");
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(getErrorMessage(err));
+        }
+      }
+    };
+
+    void autoStartBidding();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [auctionState?.current_player_id, auctionState?.id]);
 
   const updateAuctionState = async (updates: {
     current_player_id?: string | null;

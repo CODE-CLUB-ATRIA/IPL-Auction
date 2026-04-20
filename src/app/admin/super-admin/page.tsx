@@ -25,6 +25,8 @@ const formatLakhs = (amount: number): string => {
   return `Rs ${amount} L`;
 };
 
+const TEAM_PURSE_CAP_LAKHS = 10000;
+
 export default function SuperAdminPage() {
   const router = useRouter();
 
@@ -64,6 +66,33 @@ export default function SuperAdminPage() {
     [auctionState?.current_winning_franchise_code, teams],
   );
 
+  const auctionRound = auctionState?.auction_round ?? 2;
+  const roundThreeQualifiedTeams = useMemo(
+    () => teams.filter((team) => Boolean(team.round3_qualified)),
+    [teams],
+  );
+
+  const teamRankings = useMemo(() => {
+    // Calculate total credits for each team
+    const rankings = teams.map((team) => {
+      const teamPlayers = players.filter((p) => p.assignedFranchiseCode === team.franchise_code);
+      const totalCredits = teamPlayers.reduce((sum, p) => sum + (p.creditPoints || 0), 0);
+      return {
+        ...team,
+        totalCredits,
+        playerCount: teamPlayers.length,
+      };
+    });
+
+    // Sort by credits descending
+    return rankings.sort((a, b) => {
+      if (b.totalCredits !== a.totalCredits) {
+        return b.totalCredits - a.totalCredits;
+      }
+      return a.franchise_code.localeCompare(b.franchise_code);
+    });
+  }, [teams, players]);
+
   useEffect(() => {
     setSelectedPlayerId((currentId) => {
       if (players.some((player) => player.id === currentId)) return currentId;
@@ -88,10 +117,75 @@ export default function SuperAdminPage() {
       await refresh();
       setMessage(successMessage);
     } catch (error) {
-      console.error(error);
-      setErrorMessage(getErrorMessage(error));
+      const extractedMessage = getErrorMessage(error);
+      console.error("Super admin action failed", { error, extractedMessage });
+      setErrorMessage(extractedMessage);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const isMissingRelationError = (error: unknown): boolean => {
+    if (!error || typeof error !== "object") {
+      return false;
+    }
+
+    const errorRecord = error as Record<string, unknown>;
+    const code = typeof errorRecord.code === "string" ? errorRecord.code : "";
+    return code === "42P01" || code === "PGRST205";
+  };
+
+  const runResetFallback = async () => {
+    const timestamp = new Date().toISOString();
+
+    const [{ error: stateError }, { error: playersError }, { error: teamsError }] = await Promise.all([
+      supabase
+        .from("auction_state")
+        .update({
+          current_player_id: null,
+          current_bid_lakhs: 0,
+          current_winning_franchise_code: null,
+          current_winning_bid_lakhs: 0,
+          auction_round: 2,
+          status: "idle",
+          updated_at: timestamp,
+        })
+        .not("id", "is", null),
+      supabase
+        .from("players")
+        .update({
+          assigned_franchise_code: null,
+          last_bidder_code: null,
+          current_bid_lakhs: 0,
+          auction_status: "unsold",
+          assigned_at: null,
+          updated_at: timestamp,
+        })
+        .not("id", "is", null),
+      supabase
+        .from("teams")
+        .update({
+          purse_lakhs: 10000,
+          spent_lakhs: 0,
+          roster_count: 0,
+          round3_qualified: false,
+          is_blocked: false,
+          updated_at: timestamp,
+        })
+        .not("franchise_code", "is", null),
+    ]);
+
+    if (stateError) throw stateError;
+    if (playersError) throw playersError;
+    if (teamsError) throw teamsError;
+
+    const { error: strategyDeleteError } = await supabase
+      .from("team_strategy_picks")
+      .delete()
+      .not("id", "is", null);
+
+    if (strategyDeleteError && !isMissingRelationError(strategyDeleteError)) {
+      throw strategyDeleteError;
     }
   };
 
@@ -171,12 +265,50 @@ export default function SuperAdminPage() {
 
     if (!confirmReset) return;
 
-    const { error } = await supabase.rpc("reset_full_auction");
+    await runAction(
+      async () => {
+        const { error } = await supabase.rpc("reset_full_auction");
+        if (!error) {
+          return;
+        }
 
-    if (error) {
-      console.error(error);
-      alert("Reset failed");
-    }
+        // Fallback path for deployments where RPC is outdated/missing.
+        await runResetFallback();
+      },
+      "Auction fully reset to Round 2. Teams and players cleared.",
+    );
+  };
+
+  const handleStartRoundThree = async () => {
+    const confirmTransition = window.confirm(
+      "Start Round 3? Only top 5 teams will qualify, and non-strategy players will be released.",
+    );
+
+    if (!confirmTransition) return;
+
+    await runAction(
+      async () => {
+        const { error } = await supabase.rpc("start_round_three");
+        if (error) throw error;
+      },
+      "Round 3 started. Top 5 teams qualified and non-strategy players released.",
+    );
+  };
+
+  const handleSwitchToRoundTwo = async () => {
+    const confirmTransition = window.confirm(
+      "Switch back to Round 2? This clears Round 3 qualification flags.",
+    );
+
+    if (!confirmTransition) return;
+
+    await runAction(
+      async () => {
+        const { error } = await supabase.rpc("switch_to_round_two");
+        if (error) throw error;
+      },
+      "Switched back to Round 2.",
+    );
   };
 
   if (isLoading) {
@@ -205,6 +337,22 @@ export default function SuperAdminPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void handleStartRoundThree()}
+              disabled={isSaving}
+              className="rounded-full border border-violet-400/20 bg-violet-500/12 px-5 py-3 text-[0.65rem] font-bold uppercase tracking-[0.34em] text-violet-100 transition hover:border-violet-400/35 hover:bg-violet-500/16 disabled:opacity-50"
+            >
+              Start Round 3
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSwitchToRoundTwo()}
+              disabled={isSaving}
+              className="rounded-full border border-blue-400/20 bg-blue-500/12 px-5 py-3 text-[0.65rem] font-bold uppercase tracking-[0.34em] text-blue-100 transition hover:border-blue-400/35 hover:bg-blue-500/16 disabled:opacity-50"
+            >
+              Switch To Round 2
+            </button>
             <button
               type="button"
               onClick={() => void advanceAuction()}
@@ -289,6 +437,10 @@ export default function SuperAdminPage() {
             <p className="text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-cyan-100/50">Current Bid</p>
             <h2 className="mt-3 text-3xl font-black text-white">{formatLakhs(auctionState?.current_bid ?? 0)}</h2>
           </article>
+          <article className="rounded-[1.5rem] border border-violet-300/15 bg-[#04131f]/75 p-5">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-violet-100/50">Auction Round</p>
+            <h2 className="mt-3 text-3xl font-black text-white">Round {auctionRound}</h2>
+          </article>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,0.75fr)]">
@@ -325,25 +477,38 @@ export default function SuperAdminPage() {
               <div className="grid gap-2 max-h-64 overflow-y-auto">
                 {teams.map((team) => {
                   const isSelected = team.franchise_code === selectedTeamCode;
+                  const isTeamEligibleForRound = auctionRound !== 3 || Boolean(team.round3_qualified);
                   return (
                     <button
                       key={team.franchise_code}
                       type="button"
-                      onClick={() => setSelectedTeamCode(team.franchise_code)}
+                      onClick={() => {
+                        if (isTeamEligibleForRound) {
+                          setSelectedTeamCode(team.franchise_code);
+                        }
+                      }}
+                      disabled={!isTeamEligibleForRound}
                       className={`rounded-[1.2rem] border px-4 py-3 text-left transition ${
                         isSelected
                           ? "border-cyan-300/50 bg-cyan-300/12"
                           : "border-white/10 bg-white/[0.03] hover:border-cyan-300/28 hover:bg-cyan-300/8"
-                      }`}
+                      } ${!isTeamEligibleForRound ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <h4 className="text-sm font-black uppercase tracking-[0.18em] text-white">{team.franchise_code}</h4>
                           <p className="mt-1 text-[0.68rem] uppercase tracking-[0.22em] text-cyan-200/75">{team.name}</p>
+                          {auctionRound === 3 ? (
+                            <p className={`mt-1 text-[0.58rem] uppercase tracking-[0.2em] ${team.round3_qualified ? "text-emerald-200" : "text-rose-200"}`}>
+                              {team.round3_qualified ? "Qualified for Round 3" : "Not Qualified"}
+                            </p>
+                          ) : null}
                         </div>
                         <div className="text-right">
                           <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-cyan-100/55">Squad: {team.roster_count}</p>
-                          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-cyan-100/55">Rs {team.spent_lakhs}L / {team.purse_lakhs}L</p>
+                          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-cyan-100/55">
+                            Rs {team.spent_lakhs}L / {Math.max(TEAM_PURSE_CAP_LAKHS - team.spent_lakhs, 0)}L
+                          </p>
                         </div>
                       </div>
                     </button>
@@ -369,6 +534,59 @@ export default function SuperAdminPage() {
                   <span className="text-cyan-100/70">Assigned:</span>
                   <strong className="text-cyan-100">{assignedPlayers.length}</strong>
                 </div>
+              </div>
+            </section>
+
+            <section className="rounded-[1.5rem] border border-amber-300/18 bg-[#2a2415]/60 p-5">
+              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.42em] text-amber-100/70">Team Rankings by Credit Score</p>
+              <div className="mt-4 space-y-2 max-h-[400px] overflow-y-auto">
+                {teamRankings.length ? (
+                  teamRankings.map((team, index) => (
+                    <div
+                      key={team.franchise_code}
+                      className={`flex items-center justify-between rounded-lg border px-3 py-2 transition ${
+                        index < 5
+                          ? "border-emerald-400/40 bg-emerald-500/15"
+                          : "border-amber-400/20 bg-amber-500/8"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold text-xs uppercase tracking-[0.16em] ${
+                          index < 5 ? "text-emerald-300" : "text-amber-300"
+                        }`}>
+                          #{index + 1}
+                        </span>
+                        <span className="text-sm font-bold uppercase tracking-[0.18em] text-amber-100">
+                          {team.franchise_code}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <div className="text-right">
+                          <div className="text-amber-100 font-bold">{team.totalCredits} pts</div>
+                          <div className="text-amber-200/60">{team.playerCount}/11 players</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-amber-200/80">No teams with players yet.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[1.5rem] border border-violet-300/18 bg-[#15122a]/60 p-5">
+              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.42em] text-violet-100/70">Round 3 Qualified (Top 5)</p>
+              <div className="mt-4 space-y-2">
+                {roundThreeQualifiedTeams.length ? (
+                  roundThreeQualifiedTeams.map((team) => (
+                    <div key={team.franchise_code} className="flex items-center justify-between rounded-lg border border-violet-400/25 bg-violet-500/10 px-3 py-2">
+                      <span className="text-sm font-bold uppercase tracking-[0.18em] text-violet-100">{team.franchise_code}</span>
+                      <span className="text-xs text-violet-200">{team.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-violet-200/80">No teams qualified yet. Start Round 3 to generate the top 5.</p>
+                )}
               </div>
             </section>
 
