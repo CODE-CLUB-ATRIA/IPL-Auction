@@ -7,7 +7,8 @@ set
   spent_lakhs = least(greatest(coalesce(spent_lakhs, 0), 0), 10000),
   roster_count = least(greatest(coalesce(roster_count, 0), 0), 11),
   purse_lakhs = greatest(10000 - least(greatest(coalesce(spent_lakhs, 0), 0), 10000), 0),
-  updated_at = now();
+  updated_at = now()
+where true;
 
 alter table public.teams
   alter column purse_lakhs set default 10000;
@@ -26,6 +27,9 @@ alter table public.teams
   drop constraint if exists teams_roster_count_cap_check;
 alter table public.teams
   add constraint teams_roster_count_cap_check check (roster_count between 0 and 11);
+
+-- Existing deployments may have this function with the same signature but a different return type.
+drop function if exists public.lock_player_to_franchise(uuid, text, integer);
 
 create or replace function public.lock_player_to_franchise(
   p_player_id uuid,

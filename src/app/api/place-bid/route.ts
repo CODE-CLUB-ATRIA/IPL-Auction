@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
     const { data: teamRow, error: teamReadError } = await supabase
       .from("teams")
-      .select("franchise_code,purse_lakhs,spent_lakhs,roster_count,is_blocked")
+      .select("franchise_code,purse_lakhs,spent_lakhs,roster_count,is_blocked,round3_qualified")
       .eq("franchise_code", payload.franchiseCode)
       .maybeSingle();
 
@@ -109,6 +109,14 @@ export async function POST(request: Request) {
 
     if (teamRow.is_blocked) {
       return NextResponse.json({ message: "Your franchise is currently blocked from bidding." }, { status: 403 });
+    }
+
+    const activeRound = Number(activeAuctionStateRow.auction_round ?? 2) || 2;
+    if (activeRound === 3 && !Boolean(teamRow.round3_qualified)) {
+      return NextResponse.json(
+        { message: "Your franchise did not qualify for Round 3 bidding." },
+        { status: 403 },
+      );
     }
 
     const teamSpentLakhs = Number(teamRow.spent_lakhs ?? 0);

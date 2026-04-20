@@ -1075,11 +1075,25 @@ a {
   font-family: var(--font-display), serif;
   font-size: clamp(1.8rem, 3.4vw, 2.6rem);
   line-height: 1.08;
+  color: #0f0f0f;
 }
 
 .franchise-win-modal p {
   margin-top: 0.6rem;
   color: #2f2f2f;
+  font-size: 0.95rem;
+}
+
+.franchise-win-amount {
+  margin-top: 0.8rem !important;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.franchise-win-description {
+  margin-top: 0.6rem !important;
+  font-size: 0.9rem;
+  color: #4b4b4b;
 }
 
 .franchise-win-modal strong {
@@ -1091,6 +1105,52 @@ a {
   display: grid;
   gap: 0.55rem;
   grid-template-columns: 1fr 1fr;
+}
+
+.franchise-win-player-image-container {
+  position: relative;
+  margin: 1.5rem auto;
+  width: 240px;
+  height: 300px;
+  border-radius: 1.2rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.franchise-win-player-glow {
+  position: absolute;
+  inset: -4px;
+  border: 3px solid transparent;
+  border-radius: 1.2rem;
+  background: conic-gradient(
+    from var(--glow-angle, 0deg) at 50% 50%,
+    transparent 60%,
+    #fbbf24 100%
+  );
+  animation: franchiseWinGlowSpin 3s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.franchise-win-player-image {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 1rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  display: block;
+}
+
+@keyframes franchiseWinGlowSpin {
+  to {
+    --glow-angle: 360deg;
+  }
 }
 
 @keyframes franchiseWinFadeIn {

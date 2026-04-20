@@ -1,12 +1,13 @@
 'use client';
 
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
-import { mapAuctionStateRow, mapPlayerRow } from "@/lib/auctionUtils";
+import { mapAuctionStateRow } from "@/lib/auctionUtils";
 import { supabase } from "@/lib/supabase-client";
+import { mapPlayersForAuctionRound } from "@/services/supabase";
 import type { AuctionStateRow, Player, PlayerRow } from "@/types/player";
 import AnimatedTabs from "@/components/ui/animated-tabs";
 import ProceduralGroundBackground from "@/components/ui/demo";
@@ -20,10 +21,29 @@ type TeamRow = {
   spent_lakhs: number;
   roster_count: number;
   is_blocked: boolean;
+  round3_qualified?: boolean;
+};
+
+type StrategyPickRow = {
+  player_id: string;
+  slot: number;
+};
+
+type RoundTransitionModal = {
+  qualified: boolean;
 };
 
 const TEAM_SIZE_CAP = 11;
 const TEAM_PURSE_CAP_LAKHS = 10000; // 100 Cr
+
+const isMissingTableError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const errorRecord = error as Record<string, unknown>;
+  return errorRecord.code === "42P01" || errorRecord.code === "PGRST205";
+};
 
 type ViewMode = "squad" | "market" | "strategy";
 
@@ -344,6 +364,10 @@ function FranchiseDashboardContent() {
   const [selectedStrategyIds, setSelectedStrategyIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [roundTransitionModal, setRoundTransitionModal] = useState<RoundTransitionModal | null>(null);
+  const strategySnapshotRef = useRef("");
+  const hasHydratedStrategyRef = useRef(false);
+  const previousRoundRef = useRef<number | null>(null);
 
   const teamRow = useMemo(
     () => teams.find((entry) => entry.franchise_code === team) ?? null,
@@ -380,17 +404,66 @@ function FranchiseDashboardContent() {
       return;
     }
 
-    const storedValue = window.localStorage.getItem(getStorageKey(team));
-    if (storedValue) {
+    const loadStoredStrategy = async () => {
       try {
-        const parsedValue = JSON.parse(storedValue) as string[];
-        setSelectedStrategyIds(parsedValue.slice(0, 2));
-      } catch {
+        const { data, error } = await supabase
+          .from("team_strategy_picks")
+          .select("player_id,slot")
+          .eq("team_code", team)
+          .order("slot", { ascending: true });
+
+        if (error && !isMissingTableError(error)) {
+          throw error;
+        }
+
+        const nextStrategyIds = ((data ?? []) as StrategyPickRow[])
+          .sort((left, right) => left.slot - right.slot)
+          .map((row) => row.player_id)
+          .slice(0, 2);
+
+        if (nextStrategyIds.length > 0) {
+          strategySnapshotRef.current = JSON.stringify(nextStrategyIds);
+          setSelectedStrategyIds(nextStrategyIds);
+          return;
+        }
+
+        const storedValue = window.localStorage.getItem(getStorageKey(team));
+        if (storedValue) {
+          try {
+            const parsedValue = JSON.parse(storedValue) as string[];
+            const nextLocalStrategyIds = parsedValue.slice(0, 2);
+            strategySnapshotRef.current = JSON.stringify(nextLocalStrategyIds);
+            setSelectedStrategyIds(nextLocalStrategyIds);
+            return;
+          } catch {
+            // fall through to empty selection
+          }
+        }
+
+        strategySnapshotRef.current = JSON.stringify([]);
         setSelectedStrategyIds([]);
+      } catch {
+        const storedValue = window.localStorage.getItem(getStorageKey(team));
+        if (storedValue) {
+          try {
+            const parsedValue = JSON.parse(storedValue) as string[];
+            const nextLocalStrategyIds = parsedValue.slice(0, 2);
+            strategySnapshotRef.current = JSON.stringify(nextLocalStrategyIds);
+            setSelectedStrategyIds(nextLocalStrategyIds);
+            return;
+          } catch {
+            // ignore malformed cache
+          }
+        }
+
+        strategySnapshotRef.current = JSON.stringify([]);
+        setSelectedStrategyIds([]);
+      } finally {
+        hasHydratedStrategyRef.current = true;
       }
-    } else {
-      setSelectedStrategyIds([]);
-    }
+    };
+
+    void loadStoredStrategy();
   }, [team]);
 
   useEffect(() => {
@@ -398,7 +471,52 @@ function FranchiseDashboardContent() {
       return;
     }
 
+    if (!hasHydratedStrategyRef.current) {
+      return;
+    }
+
     window.localStorage.setItem(getStorageKey(team), JSON.stringify(selectedStrategyIds));
+  }, [selectedStrategyIds, team]);
+
+  useEffect(() => {
+    if (!team || !hasHydratedStrategyRef.current) {
+      return;
+    }
+
+    const serializedSelection = JSON.stringify(selectedStrategyIds.slice(0, 2));
+    if (serializedSelection === strategySnapshotRef.current) {
+      return;
+    }
+
+    const syncStrategySelection = async () => {
+      try {
+        const { error: deleteError } = await supabase.from("team_strategy_picks").delete().eq("team_code", team);
+        if (deleteError && !isMissingTableError(deleteError)) {
+          throw deleteError;
+        }
+
+        const nextRows = selectedStrategyIds.slice(0, 2).map((playerId, index) => ({
+          team_code: team,
+          player_id: playerId,
+          slot: index + 1,
+        }));
+
+        if (nextRows.length > 0) {
+          const { error: insertError } = await supabase.from("team_strategy_picks").insert(nextRows);
+          if (insertError && !isMissingTableError(insertError)) {
+            throw insertError;
+          }
+        }
+
+        strategySnapshotRef.current = serializedSelection;
+      } catch (error) {
+        if (!isMissingTableError(error)) {
+          setErrorMessage(getErrorMessage(error));
+        }
+      }
+    };
+
+    void syncStrategySelection();
   }, [selectedStrategyIds, team]);
 
   useEffect(() => {
@@ -417,9 +535,12 @@ function FranchiseDashboardContent() {
         if (teamsError) throw teamsError;
         if (stateError) throw stateError;
 
-        const nextPlayers = sortPlayers(((playersData ?? []) as PlayerRow[]).map((row) => mapPlayerRow(row)));
         const nextTeams = (teamsData ?? []) as TeamRow[];
         const nextAuctionState = stateData ? mapAuctionStateRow(stateData as Record<string, unknown>) : null;
+        const nextPlayers = mapPlayersForAuctionRound(
+          (playersData ?? []) as PlayerRow[],
+          nextAuctionState?.auction_round ?? 2,
+        );
 
         if (!isMounted) {
           return;
@@ -448,6 +569,11 @@ function FranchiseDashboardContent() {
 
     void loadData();
 
+    // Poll every 1 second to keep auction live
+    const intervalId = setInterval(() => {
+      void loadData();
+    }, 1000);
+
     const channel = supabase
       .channel("franchise_dashboard_live")
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => {
@@ -463,6 +589,7 @@ function FranchiseDashboardContent() {
 
     return () => {
       isMounted = false;
+      clearInterval(intervalId);
       void supabase.removeChannel(channel);
     };
   }, [team]);
@@ -471,6 +598,12 @@ function FranchiseDashboardContent() {
   const teamBudget = TEAM_PURSE_CAP_LAKHS;
   const teamRemaining = Math.max(teamBudget - teamSpent, 0);
   const teamCount = teamRow?.roster_count ?? squadPlayers.length;
+  const teamTotalCredits = useMemo(() => {
+    return squadPlayers.reduce((sum, player) => sum + (player.creditPoints || 0), 0);
+  }, [squadPlayers]);
+  const auctionRound = auctionState?.auction_round ?? 2;
+  const isRoundThree = auctionRound === 3;
+  const isRoundThreeQualified = Boolean(teamRow?.round3_qualified);
   const theme = franchise ? getFranchiseTheme(franchise.code) : getFranchiseTheme("CSK");
   const teamBrand = franchise ? IPL_COLOR_THEME[franchise.code] : IPL_COLOR_THEME.CSK;
   const bannerColor1 = teamBrand.base;
@@ -490,6 +623,40 @@ function FranchiseDashboardContent() {
       return [...currentIds, playerId];
     });
   };
+
+  useEffect(() => {
+    if (!franchise) {
+      return;
+    }
+
+    if (previousRoundRef.current === null) {
+      previousRoundRef.current = auctionRound;
+      return;
+    }
+
+    const previousRound = previousRoundRef.current;
+
+    if (previousRound !== auctionRound && auctionRound === 3) {
+      // Only show modal if we haven't shown it for this round transition
+      const modalShownKey = `round3_modal_shown_${franchise.code}`;
+      const hasShownModal = sessionStorage.getItem(modalShownKey) === "true";
+
+      if (!hasShownModal) {
+        setRoundTransitionModal({ qualified: isRoundThreeQualified });
+        sessionStorage.setItem(modalShownKey, "true");
+      }
+
+      setViewMode("squad");
+    }
+
+    // Clear the session flag when transitioning back to round 2
+    if (previousRound === 3 && auctionRound === 2) {
+      const modalShownKey = `round3_modal_shown_${franchise.code}`;
+      sessionStorage.removeItem(modalShownKey);
+    }
+
+    previousRoundRef.current = auctionRound;
+  }, [auctionRound, franchise, isRoundThreeQualified]);
 
   if (!franchise) {
     return (
@@ -581,13 +748,16 @@ function FranchiseDashboardContent() {
                   <div style={{ color: teamTextColor }}>
                     <h1 className="text-4xl font-bold tracking-tight leading-tight">{franchise.name}</h1>
                     <p className="text-base font-medium mt-1" style={{ color: teamTextColor }}>{teamCount} / {TEAM_SIZE_CAP} Players Signed</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: teamTextColor }}>
+                      Round {auctionRound}{isRoundThree ? (isRoundThreeQualified ? " • Qualified for Round 3" : " • Not in Round 3") : ""}
+                    </p>
                   </div>
                 </div>
 
                 {/* RIGHT SIDE: Budget & Actions */}
                 <div className="flex flex-col h-full justify-between items-start pl-8">
                   {/* Budget Row */}
-                  <div className="grid grid-cols-3 gap-4 w-full">
+                  <div className="grid grid-cols-4 gap-4 w-full">
                     <article className="w-full bg-white/10 rounded-xl py-4 text-white text-center">
                       <p className="text-sm font-medium uppercase tracking-wider text-white/70">Total Budget</p>
                       <p className="text-lg font-bold mt-1">{formatCr(teamBudget)}</p>
@@ -601,6 +771,11 @@ function FranchiseDashboardContent() {
                     <article className="w-full bg-white/10 rounded-xl py-4 text-white text-center">
                       <p className="text-sm font-medium uppercase tracking-wider text-white/70">Remaining</p>
                       <p className="text-lg font-bold mt-1">{formatCr(teamRemaining)}</p>
+                    </article>
+
+                    <article className="w-full bg-amber-500/20 rounded-xl py-4 text-amber-100 text-center border border-amber-400/30">
+                      <p className="text-sm font-medium uppercase tracking-wider text-amber-200/70">Team Credits</p>
+                      <p className="text-lg font-bold mt-1">{teamTotalCredits} pts</p>
                     </article>
                   </div>
 
@@ -640,7 +815,7 @@ function FranchiseDashboardContent() {
                 tabs={[
                   { label: "Squad", value: "squad" },
                   { label: "Market", value: "market" },
-                  { label: "Strategy", value: "strategy" },
+                  ...(isRoundThree ? [] : [{ label: "Strategy", value: "strategy" }]),
                 ]}
                 activeValue={viewMode}
                 onTabChange={(value) => setViewMode(value as ViewMode)}
@@ -752,6 +927,37 @@ function FranchiseDashboardContent() {
           </section>
         </main>
       </div>
+
+      {roundTransitionModal ? (
+        <div className="franchise-win-overlay" role="dialog" aria-modal="true" aria-labelledby="round-transition-title">
+          <section className="franchise-win-modal">
+            <p className="franchise-win-kicker">Round Update</p>
+            <h2 id="round-transition-title">
+              {roundTransitionModal.qualified ? "Congratulations, you are up to the next round" : "Round 3 has started"}
+            </h2>
+            {roundTransitionModal.qualified ? (
+              <>
+                <p>Your strategy players are kept back in your team.</p>
+                <p>You have to start the bidding for the remaining players. Your squad board now shows those retained strategy players while all other previous players are removed.</p>
+              </>
+            ) : (
+              <p>Only top 5 teams proceed to Round 3. Your team is not qualified for Round 3 bidding.</p>
+            )}
+            <div className="franchise-win-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  setViewMode("squad");
+                  setRoundTransitionModal(null);
+                }}
+              >
+                Continue
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
