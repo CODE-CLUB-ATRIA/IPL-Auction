@@ -219,10 +219,10 @@ function CrossfadeImage({
     width: "100%",
     height: "100%",
     objectFit: "contain" as const,
-    objectPosition: "bottom left",
+    objectPosition: "bottom center",
     transform: `scale(${s.scale})`,
-    transformOrigin: "bottom left",
-    filter: `drop-shadow(0 0 32px ${s.glowColor})`,
+    transformOrigin: "bottom center",
+    filter: `drop-shadow(0 0 24px ${s.glowColor})`,
     opacity,
     transition: "opacity 0.7s ease",
   });
@@ -259,14 +259,14 @@ export default function AuctionCarousel({
   const handleNext = () => setIndex((i) => (i + 1) % PLAYERS.length);
 
   return (
-    <div className="absolute inset-0 z-10 flex min-h-screen items-start justify-center p-4 pt-20">
+    <div className="absolute inset-0 z-10 flex min-h-screen items-center justify-center p-4">
       {/* 3-Way Rarity Switch - Top Right Corner */}
-      <div className="absolute top-6 right-8 z-50 flex bg-slate-900/80 border border-white/10 rounded-full p-1 backdrop-blur-md">
+      <div className="absolute top-6 right-8 z-50 flex bg-slate-900/80 border border-slate-700/50 rounded-full p-1 backdrop-blur-md shadow-lg">
         {(['common', 'epic', 'legendary'] as RarityType[]).map(r => (
           <button
             key={r}
             onClick={() => setRarityOverrides(prev => ({...prev, [player.id]: r}))}
-            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 ${activeRarity === r ? r === 'common' ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.6)]' : r === 'epic' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]' : 'bg-amber-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)]' : 'text-slate-400 hover:text-white'}`}
+            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 ${activeRarity === r ? r === 'common' ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.6)]' : r === 'epic' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]' : 'bg-amber-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             {r === 'common' ? 'COM' : r === 'epic' ? 'EPIC' : 'LEG'}
           </button>
@@ -281,109 +281,92 @@ export default function AuctionCarousel({
           transition: "background 1.2s ease",
         }}
       />
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-12 lg:flex-row px-8 lg:px-16">
-
-        {/* ── Column 1: Player image + identity ── */}
-        <div className="flex flex-1 flex-col items-start h-[80vh] max-h-[780px] w-full">
-
-          {/* Image fills the top portion, aligned above the name */}
-          <div className="relative flex-1 w-full min-h-0">
-            <CrossfadeImage
-              src={player.image}
-              alt={player.name}
-              scale={player.imageScale ?? 1}
-              glowColor={
-                activeRarity === "common" ? "rgba(0,229,255,0.35)"
-                  : activeRarity === "epic" ? "rgba(168,85,247,0.4)"
-                    : "rgba(251,191,36,0.4)"
-              }
-            />
+      
+      <div className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col lg:flex-row gap-8 p-4">
+        
+        {/* Left part: Header text and Player Image card */}
+        <div className="flex flex-col w-[360px] shrink-0 gap-6">
+          <div className="pl-2">
+            <div className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-1 drop-shadow-sm">TATA IPL AUCTION 2026</div>
+            <div className="text-4xl font-black uppercase tracking-tight text-white drop-shadow-md">Live Auction Card</div>
           </div>
-
-          {/* Name + role — sits directly below the image */}
-          <div className="w-full flex flex-col items-start px-2 pt-2 shrink-0">
-            {theme.badge && (
-              <RollingText
-                value={theme.badge.label}
-                className={`mb-2 rounded-full border px-4 py-1 text-xs font-bold uppercase tracking-[0.3em] ${theme.badge.cls}`}
-              />
-            )}
-            <h2 className="text-5xl font-black uppercase whitespace-nowrap tracking-tighter drop-shadow-2xl">
-              <RollingText value={player.name} className={theme.name} />
-            </h2>
-            <p className="mt-2 text-xl font-semibold uppercase tracking-widest drop-shadow-lg">
-              <RollingText value={player.role} className={theme.role} />
-            </p>
+          
+          {/* Player Image Card */}
+          <div className={`bg-slate-900/40 border border-slate-700/50 shadow-2xl rounded-[2rem] p-6 flex flex-col items-center backdrop-blur-sm transition-all duration-700 hover:border-slate-500/50`}>
+             <div className="w-56 h-56 rounded-full border border-slate-700/50 overflow-hidden relative mb-8 bg-slate-950/80 shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] flex items-end justify-center">
+                <CrossfadeImage
+                  src={player.image}
+                  alt={player.name}
+                  scale={player.imageScale ?? 1}
+                  glowColor={
+                    activeRarity === "common" ? "rgba(0,229,255,0.4)"
+                      : activeRarity === "epic" ? "rgba(168,85,247,0.45)"
+                        : "rgba(251,191,36,0.5)"
+                  }
+                />
+             </div>
+             
+             {/* Base Price Pill */}
+             <div className="w-full bg-slate-200 text-slate-900 rounded-xl py-4 flex items-center justify-center shadow-lg transform transition-transform hover:scale-[1.02]">
+                <span className="text-3xl font-black tracking-tight">Rs {player.stats["Base Price (Cr)"] || "2.0"} Cr</span>
+             </div>
           </div>
         </div>
 
-        {/* ── Column 2: Stats ── */}
-        <div className="flex flex-1 flex-col justify-start space-y-6 pt-4">
-          <div>
-            <div className={`text-center text-base font-bold uppercase tracking-[0.4em] mb-2 ${theme.header}`}>
-              Player Stats /*
-            </div>
-            <hr className="border-0 h-px mt-0 opacity-30" style={{ background: activeRarity === "common" ? "rgba(0,229,255,1)" : activeRarity === "epic" ? "rgba(168,85,247,1)" : "rgba(251,191,36,1)" }} />
+        {/* Right part: Informational Components */}
+        <div className="flex-1 flex flex-col gap-4 mt-[4.5rem]">
+          
+          {/* Top row: Current bid, Leading Franchise, Controls */}
+          <div className="flex gap-4">
+             <div className="flex-1 bg-slate-900/40 border border-slate-700/50 shadow-xl rounded-2xl p-6 backdrop-blur-sm flex flex-col justify-center">
+                <div className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mb-2">Current Highest Bid</div>
+                <div className={`text-4xl font-black ${theme.price || theme.accent}`}>
+                    Rs <RollingText value={player.biddingPrice} /> Cr
+                </div>
+             </div>
+             <div className="flex-1 bg-slate-900/40 border border-slate-700/50 shadow-xl rounded-2xl p-6 backdrop-blur-sm flex flex-col justify-center">
+                 <div className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mb-2">Leading Franchise</div>
+                 <div className="text-3xl font-black text-white flex items-center">
+                    <RollingText value={topTeams[0].name} className="drop-shadow-md" />
+                 </div>
+             </div>
+             <div className="flex-1 bg-slate-900/40 border border-slate-700/50 shadow-xl rounded-2xl p-5 backdrop-blur-sm flex flex-col items-start justify-center">
+                 <div className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mb-3">Controls</div>
+                 <button onClick={handleNext} className={`px-5 py-3 w-full bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold uppercase tracking-wider transition-colors text-xs border border-slate-600 shadow-lg active:scale-95 text-center`}>
+                     Next Player →
+                 </button>
+             </div>
           </div>
-          <ul className="space-y-1">
-            {Object.entries(player.stats).map(([key, val]) => (
-              <StatRow key={key} label={key} value={val} valueClass={theme.value} />
-            ))}
-          </ul>
 
-          <div
-            className={`mt-4 p-6 rounded-2xl border-2 w-full text-center flex flex-col justify-center items-center bg-slate-950/40 ${activeRarity === "common" ? "border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]" : activeRarity === "epic" ? "border-purple-400 shadow-[0_0_15px_rgba(192,132,252,0.2)]" : "border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)]"}`}
-          >
-            <h3 className={`text-lg font-bold uppercase tracking-[0.2em] mb-2 ${activeRarity === "common" ? "text-cyan-400" : activeRarity === "epic" ? "text-purple-400" : "text-amber-400"}`}>Bidding Price</h3>
-            <p className={`text-7xl font-black tabular-nums lining-nums leading-none drop-shadow-[0_0_15px_currentColor] ${activeRarity === "common" ? "text-cyan-400" : activeRarity === "epic" ? "text-purple-400" : "text-amber-400"}`}>
-              <RollingText value={player.biddingPrice} />
-              <span className={`text-3xl font-black ml-1 opacity-90 ${activeRarity === "common" ? "text-cyan-400" : activeRarity === "epic" ? "text-purple-400" : "text-amber-400"}`}>CR</span>
-            </p>
+          {/* Middle Row: Player Info */}
+          <div className="bg-slate-900/40 border border-slate-700/50 shadow-xl rounded-2xl p-8 backdrop-blur-sm relative overflow-hidden flex flex-col justify-center min-h-[160px]">
+             <div className="absolute top-6 right-8 flex flex-col items-end opacity-60">
+                <span className="text-[10px] font-bold tracking-widest text-white uppercase mb-1">Tier</span>
+                <span className={`text-sm font-black tracking-widest uppercase ${theme.name}`}>{activeRarity}</span>
+             </div>
+             <h1 className={`text-5xl font-black uppercase tracking-tighter sm:text-6xl ${theme.name}`}>
+                <RollingText value={player.name} />
+             </h1>
+             <div className={`text-sm font-bold uppercase tracking-[0.2em] mt-3 opacity-90 ${theme.role}`}>
+                <RollingText value={player.role} />
+             </div>
           </div>
+
+          {/* Bottom Row: Stats Grid */}
+          <div className="bg-slate-900/40 border border-slate-700/50 shadow-xl rounded-2xl p-6 backdrop-blur-sm">
+             <div className="grid grid-cols-4 gap-4">
+                {Object.entries(player.stats).filter(([key]) => key !== "Base Price (Cr)").map(([key, value]) => (
+                   <div key={key} className="bg-slate-950/40 border border-slate-700/30 rounded-xl p-5 flex flex-col items-center justify-center transition-colors hover:bg-slate-800/50">
+                      <span className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase mb-3 text-center">{key}</span>
+                      <span className={`text-3xl font-black tabular-nums drop-shadow-md ${theme.value}`}>
+                          {Number.isInteger(value) ? value : Number(value).toFixed(1)}
+                      </span>
+                   </div>
+                ))}
+             </div>
+          </div>
+          
         </div>
-
-        {/* ── Column 3: Teams + Controls ── */}
-        <div className="flex flex-col justify-start space-y-5 pt-4 w-[200px] shrink-0">
-          <div>
-            <h3 className={`text-center text-base font-bold uppercase tracking-[0.2em] mb-2 ${theme.header}`}>
-              Mark Sold To :
-            </h3>
-            <hr className="border-0 h-px mt-0 opacity-30" style={{ background: activeRarity === "common" ? "rgba(0,229,255,1)" : activeRarity === "epic" ? "rgba(168,85,247,1)" : "rgba(251,191,36,1)" }} />
-          </div>
-          <div className="space-y-2">
-            {topTeams.map((team, idx) => (
-              <div key={team.name} className="flex items-center justify-between gap-3 py-1 border-b border-white/5">
-                <button className={`flex-1 text-left text-sm font-semibold py-2 transition ${theme.accent} opacity-80 hover:opacity-100`}>
-                  {team.name}
-                </button>
-                <span className={`text-sm font-bold tabular-nums lining-nums w-28 text-right opacity-80 ${theme.accent}`}>
-                  ₹{team.currentBid} Cr
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-4">
-            <h3 className={`mb-4 text-center text-sm font-bold uppercase tracking-[0.2em] ${theme.label}`}>
-              Auction Controls
-            </h3>
-            <div className="flex flex-col gap-3">
-              <button className="w-full py-4 text-base font-bold uppercase tracking-wider text-red-400 transition hover:text-red-300">
-                Player Unsold
-              </button>
-              <button
-                onClick={handleNext}
-                className={`w-full py-4 text-base font-bold uppercase tracking-wider transition ${theme.next}`}
-              >
-                Next Player →
-              </button>
-              <button className="w-full py-3 text-xs font-bold uppercase tracking-wider text-slate-400 transition hover:text-slate-200">
-                End Auction
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
