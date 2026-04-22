@@ -1,14 +1,131 @@
-﻿'use client';
+'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import "./live-auction.module.css";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PlayerCard from "@/components/PlayerCard";
 import { FRANCHISE_BY_CODE, type FranchiseCode } from "@/lib/franchises";
 import { mapAuctionStateRow } from "@/lib/auctionUtils";
 import { supabase } from "@/lib/supabase-client";
 import { mapPlayersForAuctionRound } from "@/services/supabase";
-import type { AuctionStateRow, AuctionStatus, Player, PlayerRow } from "@/types/player";
+import type { AuctionStateRow, Player, PlayerRow } from "@/types/player";
+
+/* ── Enhanced team colour map with darker, modern palette ───────────────── */
+const TEAM_THEMES: Record<string, {
+  primary: string;
+  secondary: string;
+  accent: string;
+  glow: string;
+  surface: string;
+  text: string;
+  gradient: string;
+  darkBg: string;
+}> = {
+  CSK: {
+    primary: "#ffc107",
+    secondary: "#ff6f00",
+    accent: "#ffd54f",
+    glow: "rgba(255, 193, 7, 0.4)",
+    surface: "rgba(255, 193, 7, 0.08)",
+    text: "#ffe082",
+    gradient: "linear-gradient(135deg, #1a1500 0%, #0d0a00 100%)",
+    darkBg: "#0f0c00"
+  },
+  MI: {
+    primary: "#00e5ff",
+    secondary: "#0091ea",
+    accent: "#80d8ff",
+    glow: "rgba(0, 229, 255, 0.4)",
+    surface: "rgba(0, 145, 234, 0.08)",
+    text: "#4fc3f7",
+    gradient: "linear-gradient(135deg, #00151a 0%, #000a0d 100%)",
+    darkBg: "#000d12"
+  },
+  RCB: {
+    primary: "#ff1744",
+    secondary: "#d50000",
+    accent: "#ff5252",
+    glow: "rgba(255, 23, 68, 0.4)",
+    surface: "rgba(213, 0, 0, 0.08)",
+    text: "#ff8a80",
+    gradient: "linear-gradient(135deg, #1a0005 0%, #0d0002 100%)",
+    darkBg: "#140005"
+  },
+  KKR: {
+    primary: "#7c4dff",
+    secondary: "#3d5afe",
+    accent: "#b388ff",
+    glow: "rgba(124, 77, 255, 0.4)",
+    surface: "rgba(61, 90, 254, 0.08)",
+    text: "#9575cd",
+    gradient: "linear-gradient(135deg, #0a0014 0%, #05000a 100%)",
+    darkBg: "#0a0514"
+  },
+  SRH: {
+    primary: "#ff9100",
+    secondary: "#ff6d00",
+    accent: "#ffd180",
+    glow: "rgba(255, 145, 0, 0.4)",
+    surface: "rgba(255, 109, 0, 0.08)",
+    text: "#ffab40",
+    gradient: "linear-gradient(135deg, #1a0d00 0%, #0d0600 100%)",
+    darkBg: "#120900"
+  },
+  RR: {
+    primary: "#ff4081",
+    secondary: "#f50057",
+    accent: "#ff80ab",
+    glow: "rgba(255, 64, 129, 0.4)",
+    surface: "rgba(245, 0, 87, 0.08)",
+    text: "#ff6090",
+    gradient: "linear-gradient(135deg, #1a0008 0%, #0d0004 100%)",
+    darkBg: "#120008"
+  },
+  PBKS: {
+    primary: "#ff3d00",
+    secondary: "#dd2c00",
+    accent: "#ff6e40",
+    glow: "rgba(255, 61, 0, 0.4)",
+    surface: "rgba(221, 44, 0, 0.08)",
+    text: "#ff9e80",
+    gradient: "linear-gradient(135deg, #1a0500 0%, #0d0200 100%)",
+    darkBg: "#120800"
+  },
+  DC: {
+    primary: "#536dfe",
+    secondary: "#3d5afe",
+    accent: "#8c9eff",
+    glow: "rgba(83, 109, 254, 0.4)",
+    surface: "rgba(61, 90, 254, 0.08)",
+    text: "#a1b3ff",
+    gradient: "linear-gradient(135deg, #00051a 0%, #00020d 100%)",
+    darkBg: "#050a1a"
+  },
+  LSG: {
+    primary: "#00b0ff",
+    secondary: "#0091ea",
+    accent: "#80d8ff",
+    glow: "rgba(0, 176, 255, 0.4)",
+    surface: "rgba(0, 145, 234, 0.08)",
+    text: "#4fc3f7",
+    gradient: "linear-gradient(135deg, #00101a 0%, #00080d 100%)",
+    darkBg: "#000d14"
+  },
+  GT: {
+    primary: "#00bfa5",
+    secondary: "#00b8d4",
+    accent: "#64ffda",
+    glow: "rgba(0, 191, 165, 0.4)",
+    surface: "rgba(0, 184, 212, 0.08)",
+    text: "#4dd0e1",
+    gradient: "linear-gradient(135deg, #001a16 0%, #000d0c 100%)",
+    darkBg: "#001412"
+  },
+};
+
+const getTeamTheme = (code: string) => TEAM_THEMES[code] ?? TEAM_THEMES.CSK;
 
 type TeamRow = {
   franchise_code: string;
@@ -31,23 +148,262 @@ const getErrorMessage = (error: unknown): string => {
 
 const formatCr = (amountInLakhs: number): string => {
   if (amountInLakhs >= 100) {
-    return `Rs ${(amountInLakhs / 100).toFixed(amountInLakhs % 100 === 0 ? 1 : 2)} Cr`;
+    return `₹${(amountInLakhs / 100).toFixed(amountInLakhs % 100 === 0 ? 1 : 2)} Cr`;
   }
+  return `₹${amountInLakhs} L`;
+};
 
-  return `Rs ${amountInLakhs} L`;
+const sortPlayers = (players: Player[]): Player[] => {
+  return [...players].sort((leftPlayer, rightPlayer) => {
+    if (leftPlayer.slNo !== null && rightPlayer.slNo !== null) {
+      return leftPlayer.slNo - rightPlayer.slNo;
+    }
+    if (leftPlayer.slNo !== null) return -1;
+    if (rightPlayer.slNo !== null) return 1;
+    return leftPlayer.name.localeCompare(rightPlayer.name);
+  });
 };
 
 type WinAnnouncement = {
   playerId: string;
   playerName: string;
   amountLakhs: number;
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 type RoundTransitionModal = {
   qualified: boolean;
 };
 
+/* ══════════════════════════════════════════════════════════════════
+   CLEAN CURTAIN ANIMATION COMPONENT - LOGO ON TOP
+   ══════════════════════════════════════════════════════════════════ */
+function CurtainReveal({
+  franchiseCode,
+  franchiseName,
+  currentPlayer,
+  onComplete
+}: {
+  franchiseCode: string;
+  franchiseName: string;
+  currentPlayer: Player | null;
+  onComplete: () => void;
+}) {
+  const theme = getTeamTheme(franchiseCode);
+  const [phase, setPhase] = useState<"hold" | "open" | "done">("hold");
+
+  useEffect(() => {
+    const holdTimer = setTimeout(() => setPhase("open"), 2200);
+    const doneTimer = setTimeout(() => {
+      setPhase("done");
+      onComplete();
+    }, 3500);
+    return () => {
+      clearTimeout(holdTimer);
+      clearTimeout(doneTimer);
+    };
+  }, [onComplete]);
+
+  if (phase === "done") return null;
+
+  return (
+    <div
+      className="curtain-overlay"
+      style={{
+        "--team-primary": theme.primary,
+        "--team-secondary": theme.secondary,
+        "--team-glow": theme.glow,
+        "--team-surface": theme.surface,
+        "--team-text": theme.text,
+      } as React.CSSProperties}
+    >
+      {/* Background with player - Layer 1 */}
+      <div className="curtain-background">
+        <div className="curtain-bg-gradient" />
+        {currentPlayer?.id && (
+          <div className="curtain-player-bg">
+            <img
+              src={`/players/${currentPlayer.id}.png`}
+              alt=""
+              className="curtain-player-bg__img"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <div className="curtain-player-bg__overlay" />
+          </div>
+        )}
+      </div>
+
+      {/* Curtains - Layer 2 */}
+      <div className="curtain-container">
+        <div className={`curtain-panel curtain-left ${phase === "open" ? "curtain-panel--open" : ""}`}>
+          <div className="curtain-panel__fabric" />
+        </div>
+        <div className={`curtain-panel curtain-right ${phase === "open" ? "curtain-panel--open" : ""}`}>
+          <div className="curtain-panel__fabric" />
+        </div>
+      </div>
+
+      {/* Logo & Content - Layer 3 (On top of curtains) */}
+      <div className={`curtain-content ${phase === "open" ? "curtain-content--fade" : ""}`}>
+        <div className="curtain-brand">
+          <div className="curtain-logo">
+            <img src={`/teams/${franchiseCode}.png`} alt={franchiseName} />
+          </div>
+
+          <div className="curtain-text">
+            <span className="curtain-text__subtitle">Entering the Arena</span>
+            <h1 className="curtain-text__title">{franchiseName}</h1>
+          </div>
+        </div>
+
+        <div className="curtain-sparks">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span
+              key={i}
+              className="curtain-spark"
+              style={{
+                left: `${10 + Math.random() * 80}%`,
+                animationDelay: `${Math.random() * 1.5}s`,
+                background: i % 2 === 0 ? theme.primary : theme.secondary,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BID LOG PANEL - Right side component
+   ══════════════════════════════════════════════════════════════════ */
+function BidLogPanel({ bidFeed, teamTheme }: { bidFeed: string[]; teamTheme: ReturnType<typeof getTeamTheme> }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to top when new bids come in
+  useEffect(() => {
+    if (scrollRef.current && bidFeed.length > 0) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [bidFeed]);
+
+  return (
+    <section
+      className="la-glass-card la-bid-log"
+      style={{
+        "--team-primary": teamTheme.primary,
+        "--team-glow": teamTheme.glow,
+        "--team-text": teamTheme.text,
+      } as React.CSSProperties}
+    >
+      <div className="la-bid-log__header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 8v4l3 3"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <h2>Live Bid History</h2>
+        {bidFeed.length > 0 && (
+          <span className="la-bid-log__count">{bidFeed.length}</span>
+        )}
+      </div>
+
+      <div className="la-bid-log__list" ref={scrollRef}>
+        {bidFeed.length ? (
+          bidFeed.map((item, idx) => (
+            <div
+              key={`${item}-${idx}`}
+              className="la-bid-log__item"
+              style={{ animationDelay: `${idx * 50}ms` }}
+            >
+              <div className="la-bid-log__dot" />
+              <p className="la-bid-log__text">{item}</p>
+            </div>
+          ))
+        ) : (
+          <div className="la-bid-log__empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            <p>No bids yet</p>
+            <span>Waiting for the auction to begin...</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LATEST BID TOAST - Top left notification
+   ══════════════════════════════════════════════════════════════════ */
+function LatestBidToast({ bidFeed, teamTheme }: { bidFeed: string[]; teamTheme: ReturnType<typeof getTeamTheme> }) {
+  const [show, setShow] = useState(false);
+  const [latestBid, setLatestBid] = useState("");
+  const prevLengthRef = useRef(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Check if a new bid was added
+    if (bidFeed.length > prevLengthRef.current && bidFeed.length > 0) {
+      const newBid = bidFeed[0];
+      setLatestBid(newBid);
+      setShow(true);
+
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Auto dismiss after 2 seconds
+      timeoutRef.current = setTimeout(() => {
+        setShow(false);
+      }, 2000);
+    }
+
+    prevLengthRef.current = bidFeed.length;
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [bidFeed]);
+
+  if (!show || !latestBid) return null;
+
+  return (
+    <div
+      className={`latest-bid-toast ${show ? "latest-bid-toast--show" : ""}`}
+      style={{
+        "--team-primary": teamTheme.primary,
+        "--team-secondary": teamTheme.secondary,
+        "--team-glow": teamTheme.glow,
+        "--team-text": teamTheme.text,
+      } as React.CSSProperties}
+    >
+      <div className="latest-bid-toast__content">
+        <div className="latest-bid-toast__icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 8v4l3 3"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </div>
+        <div className="latest-bid-toast__text">
+          <span className="latest-bid-toast__label">New Bid</span>
+          <p className="latest-bid-toast__message">{latestBid}</p>
+        </div>
+      </div>
+      <div className="latest-bid-toast__progress">
+        <div className="latest-bid-toast__progress-bar" />
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MAIN AUCTION CONTENT - MODERN DARK UI
+   ══════════════════════════════════════════════════════════════════ */
 function FranchiseLiveAuctionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,11 +421,14 @@ function FranchiseLiveAuctionContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [winAnnouncement, setWinAnnouncement] = useState<WinAnnouncement | null>(null);
   const [roundTransitionModal, setRoundTransitionModal] = useState<RoundTransitionModal | null>(null);
+  const [showCurtain, setShowCurtain] = useState(true);
 
   const previousAssignmentsRef = useRef<Map<string, string | null>>(new Map());
   const hasHydratedRef = useRef(false);
   const lastWinAnnouncementKeyRef = useRef("");
   const previousRoundRef = useRef<number | null>(null);
+
+  const teamTheme = useMemo(() => getTeamTheme(franchise?.code ?? "CSK"), [franchise?.code]);
 
   const currentPlayer = useMemo(
     () => players.find((player) => player.id === auctionState?.current_player_id) ?? null,
@@ -82,7 +441,7 @@ function FranchiseLiveAuctionContent() {
   );
 
   const availablePlayers = useMemo(
-    () => players.filter((player) => !player.assignedFranchiseCode),
+    () => sortPlayers(players.filter((player) => !player.assignedFranchiseCode)),
     [players],
   );
 
@@ -103,6 +462,9 @@ function FranchiseLiveAuctionContent() {
   const isFundsExhausted = teamRemainingPurse <= 0;
   const hasInsufficientFundsForNextBid = teamRemainingPurse < minimumNextBidLakhs;
   const teamRemainingDisplay = teamRemainingPurse;
+  const purseRemaining = teamRemainingDisplay;
+  const purseSpent = teamSpent;
+  const pursePercent = purseRemaining > 0 ? Math.round((purseSpent / (purseRemaining + purseSpent)) * 100) : 0;
 
   const bidBlockReason = useMemo(() => {
     if (!currentPlayer) return "Cannot place a bid because there is no active player.";
@@ -118,10 +480,7 @@ function FranchiseLiveAuctionContent() {
   const isBidActionDisabled = isSubmittingBid || Boolean(bidBlockReason);
 
   const cardPlayer = useMemo(() => {
-    if (!currentPlayer) {
-      return null;
-    }
-
+    if (!currentPlayer) return null;
     return {
       ...currentPlayer,
       currentBidLakhs: liveBidLakhs,
@@ -147,14 +506,12 @@ function FranchiseLiveAuctionContent() {
 
         const nextTeams = (teamsData ?? []) as TeamRow[];
         const nextAuctionState = stateData ? mapAuctionStateRow(stateData as Record<string, unknown>) : null;
-        const nextPlayers = mapPlayersForAuctionRound(
+        const nextPlayers = sortPlayers(mapPlayersForAuctionRound(
           (playersData ?? []) as PlayerRow[],
           nextAuctionState?.auction_round ?? 2,
-        );
+        ));
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (hasHydratedRef.current && franchise) {
           const wonPlayer = nextPlayers.find((player) => {
@@ -189,30 +546,21 @@ function FranchiseLiveAuctionContent() {
           setAuctionState(null);
         }
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
     void loadData();
 
-    // Poll every 1 second to keep auction live
     const intervalId = setInterval(() => {
       void loadData();
     }, 1000);
 
     const channel = supabase
       .channel("franchise_live_auction")
-      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => {
-        void loadData();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "auction_state" }, () => {
-        void loadData();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => {
-        void loadData();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "auction_state" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void loadData())
       .subscribe();
 
     return () => {
@@ -227,42 +575,25 @@ function FranchiseLiveAuctionContent() {
   }, [minimumNextBidLakhs, auctionState?.current_player_id]);
 
   useEffect(() => {
-    if (!franchise || !auctionState?.current_player_id || !currentPlayer) {
-      return;
-    }
-
-    if (auctionState.status !== "bidding" || auctionState.current_bid <= 0) {
-      return;
-    }
+    if (!franchise || !auctionState?.current_player_id || !currentPlayer) return;
+    if (auctionState.status !== "bidding" || auctionState.current_bid <= 0) return;
 
     const feedItem = `${franchise.code === auctionState.current_winning_franchise_code ? "You" : auctionState.current_winning_franchise_code ?? "Unknown"} bid ${formatCr(auctionState.current_bid)} for ${currentPlayer.name}`;
     setBidFeed((previous) => {
-      if (previous[0] === feedItem) {
-        return previous;
-      }
-      return [feedItem, ...previous].slice(0, 8);
+      if (previous[0] === feedItem) return previous;
+      return [feedItem, ...previous].slice(0, 10);
     });
   }, [auctionState?.current_bid, auctionState?.current_player_id, auctionState?.current_winning_franchise_code, auctionState?.status, currentPlayer, franchise]);
 
   useEffect(() => {
-    if (!winAnnouncement) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setWinAnnouncement(null);
-    }, 9000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    if (!winAnnouncement) return;
+    const timeoutId = window.setTimeout(() => setWinAnnouncement(null), 9000);
+    return () => window.clearTimeout(timeoutId);
   }, [winAnnouncement]);
 
   useEffect(() => {
-    if (!franchise) {
-      return;
-    }
-
+    if (!franchise) return;
+    
     if (previousRoundRef.current === null) {
       previousRoundRef.current = auctionRound;
       return;
@@ -271,7 +602,6 @@ function FranchiseLiveAuctionContent() {
     const previousRound = previousRoundRef.current;
 
     if (previousRound !== auctionRound && auctionRound === 3) {
-      // Only show modal if we haven't shown it for this round transition
       const modalShownKey = `round3_modal_shown_${franchise.code}`;
       const hasShownModal = sessionStorage.getItem(modalShownKey) === "true";
 
@@ -281,7 +611,6 @@ function FranchiseLiveAuctionContent() {
       }
     }
 
-    // Clear the session flag when transitioning back to round 2
     if (previousRound === 3 && auctionRound === 2) {
       const modalShownKey = `round3_modal_shown_${franchise.code}`;
       sessionStorage.removeItem(modalShownKey);
@@ -309,7 +638,6 @@ function FranchiseLiveAuctionContent() {
     }
 
     const nextBidLakhs = Math.max(draftBidLakhs, minimumNextBidLakhs);
-
     setIsSubmittingBid(true);
     setErrorMessage("");
     setUiNotice("");
@@ -317,9 +645,7 @@ function FranchiseLiveAuctionContent() {
     try {
       const response = await fetch("/api/place-bid", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           auctionStateId: auctionState.id,
           playerId: currentPlayer.id,
@@ -328,18 +654,13 @@ function FranchiseLiveAuctionContent() {
         }),
       });
 
-      const payload = (await response.json()) as {
-        success?: boolean;
-        message?: string;
-        auctionState?: Record<string, unknown>;
-      };
+      const payload = await response.json() as { success?: boolean; message?: string; auctionState?: Record<string, unknown> };
 
       if (!response.ok || !payload.success || !payload.auctionState) {
         throw new Error(payload.message || "Unable to place bid right now.");
       }
 
       setAuctionState(mapAuctionStateRow(payload.auctionState));
-
       setUiNotice(`Bid placed: ${formatCr(nextBidLakhs)} on ${currentPlayer.name}`);
     } catch (error) {
       const message = getErrorMessage(error);
@@ -360,13 +681,16 @@ function FranchiseLiveAuctionContent() {
     }
   };
 
+  const handleCurtainComplete = useCallback(() => setShowCurtain(false), []);
+
+  /* ── NO FRANCHISE ─────────────────────────────────── */
   if (!franchise) {
     return (
-      <main className="dashboard-shell">
-        <section className="dashboard-card">
-          <h1>Live Auction</h1>
-          <p>Team is missing. Please login as a franchise first.</p>
-          <Link href="/franchise/login" className="primary-button">
+      <main className="la-dark-shell">
+        <section className="la-glass-card" style={{ maxWidth: 480, margin: "auto", textAlign: "center", padding: "3rem 2rem" }}>
+          <h1 style={{ fontFamily: "var(--font-display), serif", fontSize: "2rem", color: "#fff" }}>Live Auction</h1>
+          <p style={{ color: "#94a3b8", marginTop: "0.6rem" }}>Team is missing. Please login as a franchise first.</p>
+          <Link href="/franchise/login" className="la-btn la-btn--primary" style={{ marginTop: "1.2rem", display: "inline-flex" }}>
             Go To Franchise Login
           </Link>
         </section>
@@ -374,194 +698,252 @@ function FranchiseLiveAuctionContent() {
     );
   }
 
+  /* ── LOADING ──────────────────────────────────────── */
   if (isLoading) {
     return (
-      <main className="dashboard-shell h-screen overflow-hidden">
-        <section className="dashboard-card">
-          <h1>Loading Live Auction</h1>
-          <p>Fetching live player and auction state from Supabase.</p>
-        </section>
+      <main className="la-dark-shell" style={{ "--team-primary": teamTheme.primary, "--team-glow": teamTheme.glow } as React.CSSProperties}>
+        <div className="la-loading">
+          <div className="la-loading__spinner" />
+          <p>Connecting to live auction...</p>
+        </div>
       </main>
     );
   }
 
+  /* ── MAIN RENDER ──────────────────────────────────── */
   return (
-    <main className="dashboard-shell live-auction-shell h-screen w-full overflow-hidden" style={{ maxWidth: "100%" }}>
-      <header className="auth-topbar">
-        <span className="logo-text">●●● Cricket Auction Arena</span>
-        <span className="badge subtle">
-          {franchise.name} • Round {auctionRound}
-          {isRoundThree ? (isRoundThreeQualified ? " • Qualified" : " • Not Qualified") : ""}
-        </span>
-        <div className="topbar-right">
-          <Link href={`/franchise/dashboard?team=${franchise.code}`} className="ghost-button">
-            Back
+    <main
+      className="la-dark-shell"
+      style={{
+        "--team-primary": teamTheme.primary,
+        "--team-secondary": teamTheme.secondary,
+        "--team-accent": teamTheme.accent,
+        "--team-glow": teamTheme.glow,
+        "--team-surface": teamTheme.surface,
+        "--team-text": teamTheme.text,
+        "--team-gradient": teamTheme.gradient,
+        "--team-dark-bg": teamTheme.darkBg,
+      } as React.CSSProperties}
+    >
+      {/* Enhanced Curtain with Player Background */}
+      {showCurtain && (
+        <CurtainReveal
+          franchiseCode={franchise.code}
+          franchiseName={franchise.name}
+          currentPlayer={currentPlayer}
+          onComplete={handleCurtainComplete}
+        />
+      )}
+
+      {/* Ambient background effects */}
+      <div className="la-ambient-glow" />
+      <div className="la-noise-overlay" />
+      <div className="la-grid-overlay" />
+
+      {/* Latest Bid Toast - Top left notification */}
+      <LatestBidToast bidFeed={bidFeed} teamTheme={teamTheme} />
+
+      {/* ── TOPBAR ────────────────────────────────────── */}
+      <header className="la-topbar">
+        <div className="la-topbar__brand">
+          <div className="la-topbar__logo-ring">
+            <img src={`/teams/${franchise.code}.png`} alt={franchise.name} />
+          </div>
+          <div>
+            <span className="la-topbar__title">Cricket Auction Arena</span>
+            <span className="la-topbar__team">
+              {franchise.name} • Round {auctionRound}
+              {isRoundThree ? (isRoundThreeQualified ? " • Qualified" : " • Not Qualified") : ""}
+            </span>
+          </div>
+        </div>
+
+        <div className="la-topbar__status">
+          <span className={`la-status-dot ${auctionState?.status === "bidding" ? "la-status-dot--live" : ""}`} />
+          <span className="la-topbar__status-text">
+            {auctionState?.status === "bidding" ? "LIVE" : (auctionState?.status ?? "IDLE").toUpperCase()}
+          </span>
+        </div>
+
+        <div className="la-topbar__actions">
+          <Link href={`/franchise/dashboard?team=${franchise.code}`} className="la-btn la-btn--ghost">
+            Dashboard
           </Link>
-          <Link href="/" className="ghost-button">
-            Logout
+          <Link href="/" className="la-btn la-btn--ghost">
+            Exit
           </Link>
         </div>
       </header>
 
-      {errorMessage ? <section className="dashboard-card max-w-none px-4 py-3 text-left text-sm">{errorMessage}</section> : null}
-      {uiNotice ? <section className="dashboard-card max-w-none px-4 py-3 text-left text-sm text-emerald-700">{uiNotice}</section> : null}
+      {/* ── NOTICES ───────────────────────────────────── */}
+      {errorMessage ? (
+        <div className="la-glass-card" style={{ padding: "0.5rem 1rem", border: "1px solid #ff4444", color: "#ff8888", margin: "1rem" }}>
+          {errorMessage}
+        </div>
+      ) : null}
 
-      <section className="min-h-0 grid flex-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(420px,0.5fr)]">
-        <article className="min-h-0 overflow-hidden rounded-[1.6rem] border-[3px] border-[#111111] bg-white p-3 shadow-[7px_7px_0_#00000024]">
+      {/* ── MAIN GRID ────────────────────────────────── */}
+      <section className="la-grid" style={{ marginTop: errorMessage ? "0" : undefined }}>
+        {/* ── LEFT: Player spotlight ──────────────────── */}
+        <article className="la-glass-card la-player-spotlight">
           {cardPlayer ? (
-            <div className="h-full overflow-auto">
+            <div className="la-player-spotlight__inner">
               <PlayerCard player={cardPlayer} className="h-full" />
             </div>
           ) : (
-            <div className="grid h-full place-items-center rounded-[1.3rem] border-[3px] border-dashed border-[#111111] bg-[#faf7ef] text-center">
-              <div>
-                <h2 className="font-display text-4xl">Waiting For Auctioneer</h2>
-                <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[#444]">No active lot</p>
+            <div className="la-waiting">
+              <div className="la-waiting__icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10" opacity="0.3"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
               </div>
+              <h2>Waiting For Auctioneer</h2>
+              <p>No active lot</p>
             </div>
           )}
         </article>
 
-        <aside className="min-h-0 space-y-3 overflow-hidden">
-          <section className="dashboard-card max-w-none p-4 text-left">
-            <h2 className="font-display text-2xl">Live Bidding Panel</h2>
-            <p className="mt-1 text-xs uppercase tracking-[0.22em] text-[#6b6b6b]">Current lot: {currentPlayer?.name ?? "--"}</p>
+        {/* ── RIGHT: Control panel with Bid Log ───────────────────── */}
+        <aside className="la-controls">
+          {/* Bidding Panel */}
+          <section className="la-glass-card la-bid-panel">
+            <div className="la-bid-panel__header">
+              <h2>Live Bidding Panel</h2>
+              <span className="la-bid-panel__lot">{currentPlayer?.name ?? "—"}</span>
+            </div>
 
-            <div className="mt-4 grid gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <article className="rounded-[0.9rem] border-[3px] border-[#111111] bg-[#fffdf7] p-2 text-center">
-                  <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#666]">Base</p>
-                  <strong className="text-lg">{formatCr(baseBidLakhs)}</strong>
-                </article>
-                <article className="rounded-[0.9rem] border-[3px] border-[#111111] bg-[#fffdf7] p-2 text-center">
-                  <p className="text-[0.65rem] uppercase tracking-[0.2em] text-[#666]">Current Bid</p>
-                  <strong className="text-lg">{formatCr(liveBidLakhs)}</strong>
-                </article>
+            <div className="la-bid-panel__prices">
+              <div className="la-price-chip">
+                <span className="la-price-chip__label">Base Price</span>
+                <strong className="la-price-chip__value">{formatCr(baseBidLakhs)}</strong>
               </div>
-
-              <div className="rounded-[0.9rem] border-[3px] border-[#111111] bg-[#f8f8f8] p-3">
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#666]">Your next bid</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.2fr_1fr]">
-                  <button
-                    type="button"
-                    className="ghost-button h-10 min-h-0"
-                    onClick={() => applyBidDelta(-BID_INCREMENT_LAKHS)}
-                    disabled={isBidActionDisabled}
-                  >
-                    -50 L
-                  </button>
-                  <input
-                    type="number"
-                    min={minimumNextBidLakhs}
-                    step={BID_INCREMENT_LAKHS}
-                    value={draftBidLakhs}
-                    onChange={(event) => setDraftBidLakhs(Math.max(minimumNextBidLakhs, Number(event.target.value) || minimumNextBidLakhs))}
-                    onKeyDown={handleBidInputKeyDown}
-                    className="h-10 w-full rounded-[0.7rem] border-[3px] border-[#111111] bg-white px-2 text-center text-base font-black"
-                    disabled={isBidActionDisabled}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className="ghost-button h-10 min-h-0"
-                      onClick={() => applyBidDelta(BID_INCREMENT_LAKHS)}
-                      disabled={isBidActionDisabled}
-                    >
-                      +50 L
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button h-10 min-h-0"
-                      onClick={() => applyBidDelta(100)}
-                      disabled={isBidActionDisabled}
-                    >
-                      +1 Cr
-                    </button>
-                  </div>
-                </div>
-                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[#666]">Minimum next bid: {formatCr(minimumNextBidLakhs)} • Press Enter to place</p>
-                {bidBlockReason ? (
-                  <p className="mt-2 rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-rose-700">
-                    {bidBlockReason}
-                  </p>
-                ) : null}
+              <div className="la-price-chip la-price-chip--highlight">
+                <span className="la-price-chip__label">Current Bid</span>
+                <strong className="la-price-chip__value">{formatCr(liveBidLakhs)}</strong>
               </div>
+            </div>
 
-              <button
-                type="button"
-                className="primary-button w-full"
-                onClick={() => void placeBid()}
-                disabled={isBidActionDisabled}
-              >
-                {isSubmittingBid ? "Placing Bid..." : `Place Bid ${formatCr(draftBidLakhs)}`}
-              </button>
+            <div className="la-bid-panel__input-area">
+              <p className="la-label">Your next bid</p>
+              <div className="la-bid-row">
+                <button
+                  type="button"
+                  className="la-btn la-btn--ghost la-btn--sm"
+                  onClick={() => applyBidDelta(-BID_INCREMENT_LAKHS)}
+                  disabled={isBidActionDisabled}
+                >
+                  -50 L
+                </button>
+                <input
+                  type="number"
+                  min={minimumNextBidLakhs}
+                  step={BID_INCREMENT_LAKHS}
+                  value={draftBidLakhs}
+                  onChange={(event) => setDraftBidLakhs(Math.max(minimumNextBidLakhs, Number(event.target.value) || minimumNextBidLakhs))}
+                  onKeyDown={handleBidInputKeyDown}
+                  className="la-bid-input"
+                  disabled={isBidActionDisabled}
+                />
+                <button
+                  type="button"
+                  className="la-btn la-btn--ghost la-btn--sm"
+                  onClick={() => applyBidDelta(BID_INCREMENT_LAKHS)}
+                  disabled={isBidActionDisabled}
+                >
+                  +50 L
+                </button>
+                <button
+                  type="button"
+                  className="la-btn la-btn--ghost la-btn--sm"
+                  onClick={() => applyBidDelta(100)}
+                  disabled={isBidActionDisabled}
+                >
+                  +1 Cr
+                </button>
+              </div>
+              <p className="la-helper-text">Min: {formatCr(minimumNextBidLakhs)} · Press Enter</p>
+              {bidBlockReason ? (
+                <p style={{ marginTop: "8px", fontSize: "0.75rem", color: "#ff8a80", background: "rgba(255, 138, 128, 0.1)", border: "1px solid rgba(255, 138, 128, 0.2)", padding: "4px 8px", borderRadius: "4px" }}>
+                  {bidBlockReason}
+                </p>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              className="la-btn la-btn--primary la-btn--large la-btn--glow"
+              onClick={() => void placeBid()}
+              disabled={isBidActionDisabled}
+            >
+              {isSubmittingBid ? <span className="la-btn__spinner" /> : null}
+              {isSubmittingBid ? "Placing..." : `Place Bid ${formatCr(draftBidLakhs)}`}
+            </button>
+          </section>
+
+          {/* Squad Snapshot */}
+          <section className="la-glass-card la-squad-snapshot">
+            <h2>Squad Snapshot</h2>
+            <div className="la-squad-stats">
+              <div className="la-stat-mini">
+                <span className="la-stat-mini__value">{teamRow?.roster_count ?? 0}</span>
+                <span className="la-stat-mini__label">Players</span>
+              </div>
+              <div className="la-stat-mini">
+                <span className="la-stat-mini__value">{formatCr(purseSpent)}</span>
+                <span className="la-stat-mini__label">Spent</span>
+              </div>
+              <div className="la-stat-mini">
+                <span className="la-stat-mini__value">{formatCr(purseRemaining)}</span>
+                <span className="la-stat-mini__label">Remaining</span>
+              </div>
+            </div>
+            <div className="la-purse-bar">
+              <div className="la-purse-bar__fill" style={{ width: `${pursePercent}%` }} />
             </div>
           </section>
 
-          <section className="dashboard-card max-w-none p-4 text-left">
-            <h2 className="font-display text-xl">Squad Snapshot</h2>
-            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-              <article className="rounded-[0.8rem] border-[3px] border-[#111111] bg-[#fffdf7] p-2">
-                <p className="text-[0.62rem] uppercase tracking-[0.18em] text-[#666]">Players</p>
-                <strong>{teamRow?.roster_count ?? 0}</strong>
-              </article>
-              <article className="rounded-[0.8rem] border-[3px] border-[#111111] bg-[#fffdf7] p-2">
-                <p className="text-[0.62rem] uppercase tracking-[0.18em] text-[#666]">Spent</p>
-                <strong>{formatCr(teamRow?.spent_lakhs ?? 0)}</strong>
-              </article>
-              <article className="rounded-[0.8rem] border-[3px] border-[#111111] bg-[#fffdf7] p-2">
-                <p className="text-[0.62rem] uppercase tracking-[0.18em] text-[#666]">Remaining</p>
-                <strong>{formatCr(teamRemainingDisplay)}</strong>
-              </article>
-            </div>
-          </section>
-
-          <section className="dashboard-card max-w-none min-h-0 flex-1 overflow-hidden p-4 text-left">
-            <h2 className="font-display text-xl">Live Bid Feed</h2>
-            <div className="mt-3 grid max-h-[26vh] gap-2 overflow-y-auto pr-1">
-              {bidFeed.length ? (
-                bidFeed.map((item) => (
-                  <p key={item} className="rounded-[0.7rem] border-[3px] border-[#111111] bg-[#fffdf7] px-3 py-2 text-xs uppercase tracking-[0.14em]">
-                    {item}
-                  </p>
-                ))
-              ) : (
-                <p className="text-xs uppercase tracking-[0.16em] text-[#666]">Waiting for first bid...</p>
-              )}
-            </div>
-          </section>
-
-          <section className="dashboard-card max-w-none min-h-0 overflow-hidden p-4 text-left">
-            <h2 className="font-display text-xl">Available Market</h2>
-            <div className="mt-3 grid max-h-[20vh] gap-2 overflow-y-auto pr-1">
+          {/* Available Market */}
+          <section className="la-glass-card la-market-preview">
+            <h2>Available Market</h2>
+            <div className="la-market-list">
               {availablePlayers.slice(0, 25).map((player) => (
-                <article key={player.id} className="rounded-[0.8rem] border-[3px] border-[#111111] bg-[#fffdf7] px-3 py-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-black">{player.name}</h3>
-                      <p className="mt-1 text-[0.62rem] uppercase tracking-[0.18em] text-[#666]">{player.role}</p>
-                    </div>
-                    <span className="text-[0.66rem] font-bold uppercase tracking-[0.18em] text-[#333]">{formatCr(player.basePriceLakhs)}</span>
+                <div key={player.id} className="la-market-item">
+                  <div>
+                    <strong>{player.name}</strong>
+                    <span>{player.role}</span>
                   </div>
-                </article>
+                  <span className="la-market-item__price">{formatCr(player.basePriceLakhs)}</span>
+                </div>
               ))}
             </div>
           </section>
+
+          {/* Bid History - At the bottom of right panel */}
+          <BidLogPanel bidFeed={bidFeed} teamTheme={teamTheme} />
         </aside>
       </section>
 
+      {/* ── WIN ANNOUNCEMENT ─────────────────────────── */}
       {winAnnouncement ? (
-        <div className="franchise-win-overlay" role="dialog" aria-modal="true" aria-labelledby="franchise-win-title">
-          <section className="franchise-win-modal">
-            <p className="franchise-win-kicker">Congratulations</p>
+        <div className="la-win-overlay" role="dialog" aria-modal="true">
+          <section className="la-win-modal">
+            <div className="la-win-confetti">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <span key={i} className="la-confetti-piece" style={{
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 1.2}s`,
+                  background: i % 3 === 0 ? teamTheme.primary : i % 3 === 1 ? teamTheme.secondary : teamTheme.accent,
+                }} />
+              ))}
+            </div>
             
-            <div className="franchise-win-player-image-container">
-              <div className="franchise-win-player-glow" />
+            <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 1.5rem", borderRadius: "50%", background: teamTheme.surface, overflow: "hidden", border: `2px solid ${teamTheme.primary}` }}>
               {winAnnouncement.imageUrl ? (
                 <img 
                   src={winAnnouncement.imageUrl} 
                   alt={winAnnouncement.playerName}
-                  className="franchise-win-player-image"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                     const parent = e.currentTarget.parentElement;
@@ -580,33 +962,30 @@ function FranchiseLiveAuctionContent() {
                   inset: 0,
                   fontSize: "3.5rem",
                   fontWeight: "700",
-                  color: "#ffffff",
-                  textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+                  color: teamTheme.primary,
                   lineHeight: 1,
                   alignItems: "center",
                   justifyContent: "center",
                   width: "100%",
                   height: "100%",
-                  backgroundColor: "rgba(200, 163, 79, 0.3)",
-                  borderRadius: "1rem",
+                  backgroundColor: "transparent",
                 }}
               >
                 {winAnnouncement.playerName?.charAt(0)?.toUpperCase() ?? "?"}
               </div>
             </div>
-            
-            <h2 id="franchise-win-title">You won the bid for {winAnnouncement.playerName}</h2>
-            <p className="franchise-win-amount">
-              Final winning bid: <strong>{formatCr(winAnnouncement.amountLakhs)}</strong>
+
+            <p className="la-win-kicker">Congratulations</p>
+            <h2>You won the bid for<br /><span style={{ color: teamTheme.primary }}>{winAnnouncement.playerName}</span></h2>
+            <p className="la-win-amount">
+              Final bid: <strong>{formatCr(winAnnouncement.amountLakhs)}</strong>
             </p>
-            <p className="franchise-win-description">
-              This player has been added to your team section. Open your dashboard to review your full squad.
-            </p>
-            <div className="franchise-win-actions">
-              <Link href={`/franchise/dashboard?team=${encodeURIComponent(franchise.code)}`} className="primary-button">
-                Go To Team Section
+            <p className="la-win-info">This player has been added to your squad. Open your dashboard to review your full squad.</p>
+            <div className="la-win-actions">
+              <Link href={`/franchise/dashboard?team=${encodeURIComponent(franchise.code)}`} className="la-btn la-btn--primary">
+                View Squad
               </Link>
-              <button type="button" className="ghost-button" onClick={() => setWinAnnouncement(null)}>
+              <button type="button" className="la-btn la-btn--ghost" onClick={() => setWinAnnouncement(null)}>
                 Continue Bidding
               </button>
             </div>
@@ -614,25 +993,26 @@ function FranchiseLiveAuctionContent() {
         </div>
       ) : null}
 
+      {/* ── ROUND TRANSITION MODAL ─────────────────────────── */}
       {roundTransitionModal ? (
-        <div className="franchise-win-overlay" role="dialog" aria-modal="true" aria-labelledby="round-transition-title">
-          <section className="franchise-win-modal">
-            <p className="franchise-win-kicker">Round Update</p>
-            <h2 id="round-transition-title">
+        <div className="la-win-overlay" role="dialog" aria-modal="true" aria-labelledby="round-transition-title">
+          <section className="la-win-modal">
+            <p className="la-win-kicker" style={{ color: teamTheme.primary }}>Round Update</p>
+            <h2 id="round-transition-title" style={{ fontSize: "1.7rem", lineHeight: 1.3 }}>
               {roundTransitionModal.qualified ? "Congratulations, you are up to the next round" : "Round 3 has started"}
             </h2>
             {roundTransitionModal.qualified ? (
               <>
-                <p>Your strategy players are kept back in your team.</p>
-                <p>You have to start the bidding for the remaining players. Continue to your squad board to see those retained strategy players while all other previous players are removed.</p>
+                <p className="la-win-info" style={{ marginTop: "1rem", color: "#e2e8f0" }}>Your strategy players are kept back in your team.</p>
+                <p className="la-win-info" style={{ color: "#94a3b8" }}>You have to start the bidding for the remaining players. Continue to your squad board to see those retained strategy players while all other previous players are removed.</p>
               </>
             ) : (
-              <p>Only top 5 teams proceed to Round 3. Your team is not qualified for Round 3 bidding.</p>
+              <p className="la-win-info" style={{ marginTop: "1rem", color: "#e2e8f0" }}>Only top 5 teams proceed to Round 3. Your team is not qualified for Round 3 bidding.</p>
             )}
-            <div className="franchise-win-actions">
+            <div className="la-win-actions" style={{ marginTop: "2rem" }}>
               <button
                 type="button"
-                className="primary-button"
+                className="la-btn la-btn--primary"
                 onClick={() => {
                   setRoundTransitionModal(null);
                   router.push(`/franchise/dashboard?team=${encodeURIComponent(franchise.code)}`);
@@ -642,7 +1022,7 @@ function FranchiseLiveAuctionContent() {
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className="la-btn la-btn--ghost"
                 onClick={() => setRoundTransitionModal(null)}
               >
                 Stay Here
@@ -659,11 +1039,11 @@ export default function FranchiseLiveAuctionPage() {
   return (
     <Suspense
       fallback={
-        <main className="dashboard-shell h-screen overflow-hidden">
-          <section className="dashboard-card">
-            <h1>Loading Live Auction</h1>
-            <p>Connecting to live bidding feed.</p>
-          </section>
+        <main className="la-dark-shell">
+          <div className="la-loading">
+            <div className="la-loading__spinner" />
+            <p>Connecting to live bidding feed...</p>
+          </div>
         </main>
       }
     >
