@@ -51,7 +51,7 @@ type MarketBasePriceFilter = "all" | "upto50" | "50to100" | "above100";
 type MarketCreditsFilter = "all" | "upto50" | "51to70" | "above70";
 type MarketSortOption = "default" | "alphaAsc" | "alphaDesc" | "baseAsc" | "baseDesc" | "creditsAsc" | "creditsDesc";
 
-const MARKET_PAGE_SIZE = 12;
+const MARKET_PAGE_SIZE = 28;
 
 const VIEW_LABELS: Record<ViewMode, string> = {
   squad: "Squad",
@@ -623,7 +623,7 @@ function FranchiseDashboardContent() {
           await Promise.all([
             supabase.from("players").select("*").order("sl_no", { ascending: true }),
             supabase.from("teams").select("*").order("franchise_code", { ascending: true }),
-            supabase.from("auction_state").select("*").limit(1).maybeSingle(),
+            supabase.from("auction_state").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle(),
           ]);
 
         if (playersError) throw playersError;
@@ -699,6 +699,7 @@ function FranchiseDashboardContent() {
   const auctionRound = auctionState?.auction_round ?? 2;
   const isRoundThree = auctionRound === 3;
   const isRoundThreeQualified = Boolean(teamRow?.round3_qualified);
+  const isAuctionStarted = auctionState?.status === "bidding";
   const theme = franchise ? getFranchiseTheme(franchise.code) : getFranchiseTheme("CSK");
   const teamBrand = franchise ? IPL_COLOR_THEME[franchise.code] : IPL_COLOR_THEME.CSK;
   const bannerColor1 = teamBrand.base;
@@ -930,13 +931,20 @@ function FranchiseDashboardContent() {
                     "
                     style={{
                       color: "#ffffff",
-                      opacity: 1,
-                      filter: "none",
-                      mixBlendMode: "normal"
+                      opacity: isAuctionStarted ? 1 : 0.55,
+                      filter: isAuctionStarted ? "none" : "grayscale(0.15)",
+                      mixBlendMode: "normal",
+                      pointerEvents: isAuctionStarted ? "auto" : "none",
                     }}
+                    aria-disabled={!isAuctionStarted}
                   >
-                    Enter Live Auction
+                    {isAuctionStarted ? "Enter Live Auction" : "Waiting For Auctioneer"}
                   </Link>
+                  {!isAuctionStarted ? (
+                    <p className="mt-2 text-sm font-semibold" style={{ color: teamTextColor }}>
+                      Live entry unlocks only after Auctioneer presses Start Auction.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -1137,6 +1145,7 @@ function FranchiseDashboardContent() {
                     <article className="dashboard-card dashboard-card--wide col-span-4">{emptyMessage}</article>
                   )}
                 </section>
+
               </div>
             ) : null}
           </section>

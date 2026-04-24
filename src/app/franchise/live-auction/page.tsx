@@ -476,6 +476,7 @@ function FranchiseLiveAuctionContent() {
   const isRoundThree = auctionRound === 3;
   const isRoundThreeQualified = Boolean(teamRow?.round3_qualified);
   const isAuctionStarted = auctionState?.status === "bidding";
+  const showAuctionStartOverlay = Boolean(currentPlayer) && !isAuctionStarted;
   const isTeamFull = (teamRow?.roster_count ?? 0) >= TEAM_SIZE_CAP;
   const teamSpent = teamRow?.spent_lakhs ?? 0;
   const teamBudget = TEAM_PURSE_CAP_LAKHS;
@@ -883,6 +884,7 @@ function FranchiseLiveAuctionContent() {
                 {isSubmittingBid ? "Placing Bid..." : `Place Bid ${formatCr(draftBidLakhs)}`}
               </button>
             </div>
+          </section>
 
           <section className="dashboard-card max-w-none w-full p-4 text-left" style={panelStyle}>
             <h2 className="font-display text-xl">Squad Snapshot</h2>
@@ -940,7 +942,7 @@ function FranchiseLiveAuctionContent() {
                     <span className="text-[0.66rem] font-bold uppercase tracking-[0.18em]" style={{ color: liveTheme.accentSoft }}>{formatCr(player.basePriceLakhs)}</span>
                   </div>
                   <span className="la-market-item__price">{formatCr(player.basePriceLakhs)}</span>
-                </div>
+                </article>
               ))}
             </div>
           </section>
@@ -952,9 +954,39 @@ function FranchiseLiveAuctionContent() {
 
       {/* ── WIN ANNOUNCEMENT ─────────────────────────── */}
       {winAnnouncement ? (
-        <div className="franchise-win-overlay" role="dialog" aria-modal="true" aria-labelledby="franchise-win-title">
-          <section className="franchise-win-modal" style={{ borderColor: liveTheme.accent, background: `linear-gradient(160deg, ${liveTheme.surface}, ${liveTheme.surfaceAlt})` }}>
-            <p className="franchise-win-kicker" style={{ color: liveTheme.primary }}>Congratulations</p>
+        <div className="franchise-win-overlay" role="dialog" aria-modal="true" aria-labelledby="franchise-win-title" style={{ zIndex: 130 }}>
+          <section
+            className="franchise-win-modal"
+            style={{
+              borderColor: liveTheme.accent,
+              background: `linear-gradient(160deg, color-mix(in srgb, ${liveTheme.surface} 78%, #0a1018), color-mix(in srgb, ${liveTheme.surfaceAlt} 82%, #0b121a))`,
+              color: "#f8fbff",
+              borderWidth: "2px",
+              borderStyle: "solid",
+              borderRadius: "1.4rem",
+              boxShadow: `0 26px 72px rgba(0,0,0,0.55), 0 0 52px color-mix(in srgb, ${liveTheme.accent} 24%, transparent)`,
+              padding: "1.35rem",
+              textAlign: "center",
+              width: "min(640px, 96vw)",
+            }}
+          >
+            <p
+              className="franchise-win-kicker"
+              style={{
+                color: liveTheme.accentSoft,
+                background: `color-mix(in srgb, ${liveTheme.primary} 16%, transparent)`,
+                border: `1px solid color-mix(in srgb, ${liveTheme.accent} 55%, transparent)`,
+                borderRadius: "999px",
+                padding: "0.3rem 0.85rem",
+                fontSize: "0.72rem",
+                fontWeight: 800,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                display: "inline-flex",
+              }}
+            >
+              Congratulations
+            </p>
             
             <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 1.5rem", borderRadius: "50%", background: teamTheme.surface, overflow: "hidden", border: `2px solid ${teamTheme.primary}` }}>
               {winAnnouncement.imageUrl ? (
@@ -993,12 +1025,14 @@ function FranchiseLiveAuctionContent() {
               </div>
             </div>
 
-            <p className="la-win-kicker">Congratulations</p>
-            <h2>You won the bid for<br /><span style={{ color: teamTheme.primary }}>{winAnnouncement.playerName}</span></h2>
-            <p className="la-win-amount">
+            <p className="la-win-kicker" style={{ color: "#dfe8f7", marginTop: "0.6rem" }}>Congratulations</p>
+            <h2 style={{ color: "#ffffff", fontSize: "2rem", lineHeight: 1.2, marginTop: "0.45rem" }}>
+              You won the bid for<br /><span style={{ color: teamTheme.primary }}>{winAnnouncement.playerName}</span>
+            </h2>
+            <p className="la-win-amount" style={{ color: "#b8c7df" }}>
               Final bid: <strong>{formatCr(winAnnouncement.amountLakhs)}</strong>
             </p>
-            <p className="la-win-info">This player has been added to your squad. Open your dashboard to review your full squad.</p>
+            <p className="la-win-info" style={{ color: "#d2deee" }}>This player has been added to your squad. Open your dashboard to review your full squad.</p>
             <div className="la-win-actions">
               <Link href={`/franchise/dashboard?team=${encodeURIComponent(franchise.code)}`} className="la-btn la-btn--primary">
                 View Squad
@@ -1046,6 +1080,51 @@ function FranchiseLiveAuctionContent() {
                 Stay Here
               </button>
             </div>
+          </section>
+        </div>
+      ) : null}
+
+      {/* ── AUCTION WAITING OVERLAY ─────────────────────────── */}
+      {showAuctionStartOverlay ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auction-waiting-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 95,
+            display: "grid",
+            placeItems: "center",
+            background: "rgba(3, 8, 18, 0.72)",
+            backdropFilter: "blur(4px)",
+            padding: "1rem",
+          }}
+        >
+          <section
+            style={{
+              width: "min(680px, 96vw)",
+              borderRadius: "1.25rem",
+              border: `2px solid ${liveTheme.accent}`,
+              background: `linear-gradient(160deg, color-mix(in srgb, ${liveTheme.surface} 80%, #08111a), color-mix(in srgb, ${liveTheme.surfaceAlt} 84%, #0a131d))`,
+              color: "#f7fbff",
+              boxShadow: `0 0 44px color-mix(in srgb, ${liveTheme.accent} 25%, transparent)`,
+              padding: "1.5rem",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.24em", color: liveTheme.accentSoft }}>
+              Live Auction Paused
+            </p>
+            <h2 id="auction-waiting-title" style={{ fontSize: "1.8rem", marginTop: "0.75rem", lineHeight: 1.2, color: "#ffffff" }}>
+              Waiting for IPL Auctioneer to start bidding
+            </h2>
+            <p style={{ marginTop: "0.9rem", fontSize: "0.96rem", color: "#d4e1f3" }}>
+              Current lot: <strong style={{ color: liveTheme.accentSoft }}>{currentPlayer?.name ?? "--"}</strong>
+            </p>
+            <p style={{ marginTop: "0.5rem", fontSize: "0.88rem", color: "#b7c7df" }}>
+              You can view details, but bidding is blocked until the auctioneer presses Start Auction.
+            </p>
           </section>
         </div>
       ) : null}

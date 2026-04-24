@@ -190,7 +190,9 @@ const isRoundThreeIconicRow = (row: Record<string, unknown>): boolean => {
     return true;
   }
 
-  return getIconicSequenceByName(row) !== null;
+  // Do not infer Round 3 eligibility from name alone; it can misclassify
+  // regular players and shrink the Round 2 market unexpectedly.
+  return false;
 };
 
 const getRoundThreeSequence = (row: Record<string, unknown>): number => {
