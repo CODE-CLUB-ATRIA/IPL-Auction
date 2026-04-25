@@ -102,50 +102,11 @@ a {
 }
 
 .landing-shell {
-  position: relative;
-  max-width: none;
-  width: 100%;
-  height: 100vh;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.landing-center-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  z-index: 10;
-}
-
-.landing-title {
-  font-family: var(--font-display), serif;
-  font-size: clamp(2rem, 6vw, 4rem);
-  font-weight: bold;
-  color: white;
-  text-align: center;
-  margin: 0;
-}
-
-.landing-buttons {
-  display: flex;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
   gap: 1rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.landing-bg-video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-  opacity: 0.6;
 }
 
 .landing-nav,
@@ -270,7 +231,6 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: white;
 }
 
 .auth-shell,

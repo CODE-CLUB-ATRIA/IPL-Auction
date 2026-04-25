@@ -184,15 +184,6 @@ export default function SuperAdminPage() {
     if (strategyDeleteError && !isMissingRelationError(strategyDeleteError)) {
       throw strategyDeleteError;
     }
-
-    const { error: bidEventsDeleteError } = await supabase
-      .from("player_bid_events")
-      .delete()
-      .not("id", "is", null);
-
-    if (bidEventsDeleteError && !isMissingRelationError(bidEventsDeleteError)) {
-      throw bidEventsDeleteError;
-    }
   };
 
   const releaseSelectedPlayer = async () => {
@@ -262,18 +253,7 @@ export default function SuperAdminPage() {
     await runAction(
       async () => {
         const { error } = await supabase.rpc("reset_full_auction");
-        if (!error) {
-          const { error: bidEventsDeleteError } = await supabase
-            .from("player_bid_events")
-            .delete()
-            .not("id", "is", null);
-
-          if (bidEventsDeleteError && !isMissingRelationError(bidEventsDeleteError)) {
-            throw bidEventsDeleteError;
-          }
-
-          return;
-        }
+        if (!error) return;
         await runResetFallback();
       },
       "Auction fully reset to Round 2. Teams and players cleared.",

@@ -534,15 +534,6 @@ export default function SuperAdminPage() {
     if (strategyDeleteError && !isMissingTableError(strategyDeleteError)) {
       throw strategyDeleteError;
     }
-
-    const { error: bidEventsDeleteError } = await supabase
-      .from("player_bid_events")
-      .delete()
-      .not("id", "is", null);
-
-    if (bidEventsDeleteError && !isMissingTableError(bidEventsDeleteError)) {
-      throw bidEventsDeleteError;
-    }
   };
 
   const handleResetAuction = async () => {
@@ -554,15 +545,6 @@ export default function SuperAdminPage() {
       const { error } = await supabase.rpc('reset_full_auction');
 
       if (!error) {
-        const { error: bidEventsDeleteError } = await supabase
-          .from("player_bid_events")
-          .delete()
-          .not("id", "is", null);
-
-        if (bidEventsDeleteError && !isMissingTableError(bidEventsDeleteError)) {
-          throw bidEventsDeleteError;
-        }
-
         return;
       }
 

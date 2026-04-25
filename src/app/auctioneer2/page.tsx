@@ -22,7 +22,6 @@ type SoldAnnouncement = {
   teamCode: string;
   playerName: string;
   amountLakhs: number;
-  playerImageUrl?: string;
 };
 
 const TIER_STYLES: Record<
@@ -173,40 +172,20 @@ export default function AuctioneerTwoPage() {
   const tierStyle = TIER_STYLES[tier];
   const currentBidLakhs = auctionState?.current_bid ?? activePlayer?.basePriceLakhs ?? 0;
   const leadingFranchiseCode = auctionState?.current_winning_franchise_code ?? "--";
-  const isAuctionStarted = auctionState?.status === "bidding";
-  const activePlayerNameLength = activePlayer?.name.length ?? 0;
-  const playerNameSizeClass =
-    activePlayerNameLength >= 26
-      ? "text-[1.95rem] sm:text-[2.45rem]"
-      : activePlayerNameLength >= 20
-        ? "text-[2.35rem] sm:text-[2.95rem]"
-        : "text-5xl sm:text-[4rem]";
-  const playerNameWrapClass = activePlayerNameLength <= 18 ? "whitespace-nowrap" : "whitespace-normal";
 
-  const loadTopBids = async (
-    playerId: string | null,
-    auctionStateId: string | null,
-    sessionStartedAt: string | null,
-  ) => {
-    if (!playerId || !auctionStateId) {
+  const loadTopBids = async (playerId: string | null) => {
+    if (!playerId) {
       setTopBids([]);
       return;
     }
 
-    let bidQuery = supabase
+    const { data, error: bidsError } = await supabase
       .from("player_bid_events")
       .select("id,player_id,franchise_code,bid_lakhs,created_at")
-      .eq("auction_state_id", auctionStateId)
       .eq("player_id", playerId)
       .order("bid_lakhs", { ascending: false })
       .order("created_at", { ascending: true })
       .limit(3);
-
-    if (sessionStartedAt) {
-      bidQuery = bidQuery.gte("created_at", sessionStartedAt);
-    }
-
-    const { data, error: bidsError } = await bidQuery;
 
     if (bidsError) {
       if (bidsError.code === "42P01" || bidsError.code === "PGRST205") {
@@ -235,10 +214,6 @@ export default function AuctioneerTwoPage() {
 
     const nextPlayers = sortPlayers(((playersData ?? []) as PlayerRow[]).map((row) => mapPlayerRow(row)));
     let nextState = stateData ? mapAuctionStateRow(stateData as Record<string, unknown>) : null;
-    let sessionStartedAt =
-      stateData && typeof (stateData as Record<string, unknown>).updated_at === "string"
-        ? ((stateData as Record<string, unknown>).updated_at as string)
-        : null;
 
     if (nextState?.id && !nextState.current_player_id && nextPlayers[0]?.id) {
       const firstPlayer = nextPlayers[0];
@@ -263,12 +238,11 @@ export default function AuctioneerTwoPage() {
         current_winning_franchise_code: null,
         current_winning_bid_lakhs: 0,
       };
-      sessionStartedAt = new Date().toISOString();
     }
 
     setPlayers(nextPlayers);
     setAuctionState(nextState);
-    await loadTopBids(nextState?.current_player_id ?? null, nextState?.id ?? null, sessionStartedAt);
+    await loadTopBids(nextState?.current_player_id ?? null);
     return nextState;
   };
 
@@ -279,11 +253,22 @@ export default function AuctioneerTwoPage() {
       try {
         const latestState = await refreshData();
 
+        if (latestState?.id && latestState.current_player_id && latestState.status !== "bidding") {
+          const { error: startError } = await supabase
+            .from("auction_state")
+            .update({ status: "bidding", updated_at: new Date().toISOString() })
+            .eq("id", latestState.id);
+
+          if (startError) throw startError;
+          await refreshData();
+          if (isMounted) {
+            setNotice("Auction started. Franchises can now place bids.");
+          }
+        }
+
         if (isMounted) {
           setError("");
-          if (latestState?.current_player_id && latestState.status !== "bidding") {
-            setNotice("Auction paused. Press Start Auction to allow bids for this player.");
-          } else {
+          if (!latestState || latestState.status === "bidding") {
             setNotice("");
           }
         }
@@ -338,6 +323,39 @@ export default function AuctioneerTwoPage() {
     };
   }, [soldAnnouncement]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const autoStartBidding = async () => {
+      if (!auctionState?.id || !auctionState.current_player_id) return;
+      if (auctionState.status === "bidding") return;
+
+      try {
+        const { error } = await supabase
+          .from("auction_state")
+          .update({ status: "bidding", updated_at: new Date().toISOString() })
+          .eq("id", auctionState.id);
+
+        if (error) throw error;
+
+        if (isMounted) {
+          await refreshData();
+          setNotice("Bidding started. Franchises can now place bids.");
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(getErrorMessage(err));
+        }
+      }
+    };
+
+    void autoStartBidding();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [auctionState?.current_player_id, auctionState?.id]);
+
   const updateAuctionState = async (updates: {
     current_player_id?: string | null;
     current_bid_lakhs?: number;
@@ -386,7 +404,6 @@ export default function AuctioneerTwoPage() {
           teamCode: winningFranchiseCode,
           playerName: activePlayer.name,
           amountLakhs: bidLakhs,
-          playerImageUrl: activePlayer.imageUrl,
         });
       } else {
         const { error: playerUpdateError } = await supabase
@@ -423,38 +440,7 @@ export default function AuctioneerTwoPage() {
       current_winning_bid_lakhs: 0,
     });
 
-    setNotice(`Moved to ${nextPlayerRecord.name}. Press Start Auction when ready.`);
-  };
-
-  const startAuction = async () => {
-    if (!auctionState?.id || !activePlayer) return;
-    if (auctionState.status === "bidding") {
-      setNotice("Auction is already live for this player.");
-      return;
-    }
-
-    setIsSaving(true);
-    setError("");
-
-    try {
-      const { error: startError } = await supabase
-        .from("auction_state")
-        .update({
-          status: "bidding",
-          current_bid_lakhs: Math.max(auctionState.current_bid ?? 0, activePlayer.basePriceLakhs),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", auctionState.id);
-
-      if (startError) throw startError;
-
-      await refreshData();
-      setNotice(`Auction started for ${activePlayer.name}. Franchises can now bid.`);
-    } catch (startErr) {
-      setError(getErrorMessage(startErr));
-    } finally {
-      setIsSaving(false);
-    }
+    setNotice(`Moved to ${nextPlayerRecord.name}.`);
   };
 
   const playerImage =
@@ -511,14 +497,10 @@ export default function AuctioneerTwoPage() {
             <div className="mx-5 mt-4 rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100 sm:mx-8">{error}</div>
           ) : null}
 
-          {notice ? (
-            <div className="mx-5 mt-4 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 sm:mx-8">{notice}</div>
-          ) : null}
-
 
           {activePlayer ? (
             <div className="grid gap-6 lg:gap-14 p-5 sm:p-8 lg:grid-cols-[340px_minmax(0,1fr)]">
-              <aside className="flex min-w-0 flex-col justify-end h-full mt-4 sm:mt-0 overflow-hidden">
+              <aside className="flex flex-col justify-end h-full mt-4 sm:mt-0">
                 <div className="relative w-full flex-1 flex flex-col justify-end mb-2">
                   <CrossfadeImage src={playerImage} alt={activePlayer.name} className="inset-0 max-h-[60vh] h-full w-full object-contain object-left-bottom drop-shadow-[0_0_30px_rgba(0,0,0,0.6)] origin-bottom-left" />
                 </div>
@@ -529,10 +511,7 @@ export default function AuctioneerTwoPage() {
                     }`}>
                     {tier}
                   </span>
-                  <h2
-                    className={`${playerNameSizeClass} ${playerNameWrapClass} max-w-[335px] lg:max-w-[360px] break-normal font-black tracking-tight text-white mb-3 leading-[0.9]`}
-                    style={{ fontFamily: "Georgia, serif", wordBreak: "normal", overflowWrap: "normal", textWrap: "balance", hyphens: "none" }}
-                  >
+                  <h2 className="text-5xl font-black uppercase tracking-tight sm:text-[4rem] text-white mb-3 leading-[0.85] sm:leading-[0.85]" style={{ fontFamily: "Georgia, serif" }}>
                     {activePlayer.name}
                   </h2>
                   <p className={`text-[0.8rem] font-black uppercase tracking-[0.2em] ${tier === 'common' ? 'text-[#22d3ee]' : tier === 'epic' ? 'text-[#818cf8]' : 'text-[#fbbf24]'}`}>
@@ -627,16 +606,8 @@ export default function AuctioneerTwoPage() {
                 <div className="flex flex-wrap justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => void startAuction()}
-                    disabled={isSaving || !activePlayer || isAuctionStarted}
-                    className={`rounded-xl px-6 py-3 text-sm font-black uppercase tracking-[0.22em] transition disabled:cursor-not-allowed disabled:opacity-50 ${tierStyle.button}`}
-                  >
-                    {isAuctionStarted ? "Auction Live" : "Start Auction"}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => void lockBid()}
-                    disabled={isSaving || !activePlayer || !isAuctionStarted}
+                    disabled={isSaving || !activePlayer}
                     className={`rounded-xl px-6 py-3 text-sm font-black uppercase tracking-[0.22em] transition disabled:cursor-not-allowed disabled:opacity-50 ${tierStyle.button}`}
                   >
                     Lock Bid
@@ -664,57 +635,32 @@ export default function AuctioneerTwoPage() {
       </div>
 
       {soldAnnouncement ? (
-        <div className="fixed inset-0 z-[120] grid place-items-center bg-[#050a17]/78 backdrop-blur-[5px] px-4">
-          <div className="w-full max-w-2xl rounded-[1.9rem] border border-white/18 bg-[linear-gradient(180deg,rgba(16,24,38,0.96),rgba(10,16,28,0.98))] p-7 shadow-[0_24px_80px_rgba(2,6,23,0.75)] animate-[popupIn_320ms_ease-out]">
-            <p className="text-center text-[0.72rem] font-semibold uppercase tracking-[0.35em] text-slate-300">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 backdrop-blur-[2px] px-4">
+          <div className="w-full max-w-2xl rounded-[1.8rem] border border-emerald-300/40 bg-[linear-gradient(180deg,rgba(6,78,59,0.95),rgba(4,47,46,0.98))] p-6 shadow-[0_0_60px_rgba(16,185,129,0.35)] animate-[popupIn_320ms_ease-out]">
+            <p className="text-center text-[0.72rem] font-semibold uppercase tracking-[0.35em] text-emerald-200/85">
               Player Sold
             </p>
-
-            <div className="mt-4 flex items-center justify-center gap-4">
-              <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-slate-200/55 bg-slate-100/10">
-                {soldAnnouncement.playerImageUrl ? (
-                  <img
-                    src={soldAnnouncement.playerImageUrl}
-                    alt={soldAnnouncement.playerName}
-                    className="h-full w-full object-cover object-top"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-3xl font-black text-white">
-                    {soldAnnouncement.playerName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/40 bg-white/92 p-2 shadow-[0_0_24px_rgba(148,163,184,0.3)]">
-                <img
-                  src={`/teams/${soldAnnouncement.teamCode}.png`}
-                  alt={`${soldAnnouncement.teamCode} logo`}
-                  className="h-full w-full object-contain"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
-              </div>
-            </div>
-
             <h2 className="mt-3 text-center text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
-              Team {soldAnnouncement.teamCode} Wins The Lot
+              Congratulations, Team {soldAnnouncement.teamCode}
             </h2>
-            <p className="mt-3 text-center text-base font-semibold uppercase tracking-[0.14em] text-slate-200 sm:text-lg">
-              {soldAnnouncement.playerName}
+            <p className="mt-3 text-center text-base font-semibold uppercase tracking-[0.14em] text-emerald-100 sm:text-lg">
+              You got {soldAnnouncement.playerName}
             </p>
-            <p className="mt-2 text-center text-2xl font-black text-white sm:text-3xl">
+            <p className="mt-2 text-center text-2xl font-black text-emerald-200 sm:text-3xl">
               {formatLakhs(soldAnnouncement.amountLakhs)}
             </p>
+
+            <div className="mt-6 flex items-center justify-center gap-3 text-2xl" aria-hidden>
+              <span className="animate-bounce">🏏</span>
+              <span className="animate-pulse">🎉</span>
+              <span className="animate-bounce [animation-delay:120ms]">🏆</span>
+            </div>
 
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
                 onClick={() => setSoldAnnouncement(null)}
-                className="rounded-xl border border-white/28 bg-white/10 px-5 py-2 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:bg-white/16"
+                className="rounded-xl border border-emerald-200/50 bg-emerald-200/15 px-5 py-2 text-sm font-bold uppercase tracking-[0.22em] text-emerald-100 transition hover:bg-emerald-200/25"
               >
                 Close
               </button>
